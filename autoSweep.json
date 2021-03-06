@@ -1,0 +1,11 @@
+{
+  "Author": "mommothazaz123",
+  "Name": "AutoSweep",
+  "Description": "A background plugin that automatically sweeps housing wards when viewing wards from the city aetheryte.",
+  "InternalName": "autoSweep",
+  "AssemblyVersion": "0.0.1.1",
+  "RepoUrl": "https://github.com/mommothazaz123/FFXIV_AutoSweep",
+  "ApplicableVersion": "2021.02.10.0000.0000",
+  "Tags": ["housing", "background"],
+  "DalamudApiLevel": 2
+}
