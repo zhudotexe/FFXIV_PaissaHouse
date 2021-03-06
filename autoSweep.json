@@ -1,7 +1,7 @@
 {
   "Author": "mommothazaz123",
   "Name": "AutoSweep",
-  "Description": "A background plugin that automatically sweeps housing wards when viewing wards from the city aetheryte.",
+  "Description": "Contribute housing sweeps to the housing alerts community automatically when you view residential districts from an aetheryte.",
   "InternalName": "autoSweep",
   "AssemblyVersion": "0.0.1.1",
   "RepoUrl": "https://github.com/mommothazaz123/FFXIV_AutoSweep",

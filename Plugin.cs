@@ -3,6 +3,8 @@ using AutoSweep.Structures;
 using Dalamud.Game.Command;
 using Dalamud.Game.Internal.Network;
 using Dalamud.Plugin;
+using Lumina.Excel;
+using Lumina.Excel.GeneratedSheets;
 
 namespace AutoSweep
 {
@@ -16,22 +18,27 @@ namespace AutoSweep
         private DalamudPluginInterface pi;
         private Configuration configuration;
         private PluginUI ui;
+        private ExcelSheet<TerritoryType> territories;
+        private ExcelSheet<World> worlds;
 
         public void Initialize(DalamudPluginInterface pluginInterface)
         {
             this.pi = pluginInterface;
 
+            // setup
             this.configuration = this.pi.GetPluginConfig() as Configuration ?? new Configuration();
             this.configuration.Initialize(this.pi);
             this.ui = new PluginUI(this.configuration);
+            this.territories = pi.Data.GetExcelSheet<TerritoryType>();
+            this.worlds = pi.Data.GetExcelSheet<World>();
 
             this.pi.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
                 HelpMessage = "Configure autosweep settings."
             });
 
+            // event hooks
             this.pi.Framework.Network.OnNetworkMessage += OnNetworkEvent;
-
             this.pi.UiBuilder.OnBuildUi += DrawUI;
             this.pi.UiBuilder.OnOpenConfigUi += (sender, args) => DrawConfigUI();
 
@@ -81,8 +88,11 @@ namespace AutoSweep
 
         private void OnFoundOpenHouse(HousingWardInfo wardInfo, HouseInfoEntry houseInfoEntry, int plotNumber)
         {
+            var districtName = this.territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId).PlaceName.Value.Name;
+            var worldName = this.worlds.GetRow((uint)wardInfo.LandIdent.WorldId).Name;
             // todo output with correct format
-            this.pi.Framework.Gui.Chat.Print($"Open plot found at {wardInfo.LandIdent.WardNumber + 1}-{plotNumber + 1} ({houseInfoEntry.HousePrice} gil)");
+            this.pi.Framework.Gui.Chat.Print(
+                $"Open plot found at {districtName} {wardInfo.LandIdent.WardNumber + 1}-{plotNumber + 1} ({houseInfoEntry.HousePrice} gil, {worldName})");
         }
 
         // ==== UI ====

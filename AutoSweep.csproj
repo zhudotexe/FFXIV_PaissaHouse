@@ -44,6 +44,14 @@
       <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\ImGuiScene.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Lumina, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>packages\Lumina.2.5.1\lib\netstandard2.0\Lumina.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Lumina.Excel, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>packages\Lumina.Excel.5.40.0\lib\netstandard2.0\Lumina.Excel.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
@@ -66,6 +74,9 @@
     <Content Include="autoSweep.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

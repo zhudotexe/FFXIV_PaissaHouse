@@ -33,17 +33,17 @@ namespace AutoSweep
 
     public enum OutputFormat
     {
-        // Sweep for Shirogane
+        // Sweep for Shirogane (Diabolos)
         // Shirogane 5-25 (3.187m)
         // ...
         Simple = 1,
 
-        // Sweep for Shirogane
+        // Sweep for Shirogane (Diabolos)
         // @SmallShirogane 5-25 (3.187m)
         // @LargeShirogane 1-1 (50.000m)
         Pings = 2,
 
-        // Sweep for Shirogane
+        // Sweep for Shirogane (Diabolos)
         // ##forsale shirogane w5 p25
         // ...
         EnoBot = 3,
