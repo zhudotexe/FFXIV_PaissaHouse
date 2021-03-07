@@ -1,55 +1,30 @@
-# AutoSweep (WIP)
-AutoSweep is a simple plugin that runs in the background. When you view a housing district from an
-aetheryte or ferry, it outputs any free houses it finds, and contributes to the Sadu Dothpawrl's Housing Alerts Discord.
+# PaissaHouse
+PaissaHouse is a simple plugin that runs in the background: when you view a housing ward from an aetheryte or ferry, it outputs any free houses it finds in that ward to the chat window.
 
 ## Usage
 Simply install and it will happily run in the background.
 
-Use `/pautosweep` to open configuration.
+// TODO: add image of it working here.
+
+Use `/psweep` to open configuration, and `/psweep reset` to reset the internal sweep cache if you want to sweep the same district multiple times in a row.
 
 | Setting            | Description                                                                                          | Default |
 |--------------------|------------------------------------------------------------------------------------------------------|---------|
 | Enabled            | Whether or not the plugin is enabled. If disabled, it will not look for houses.                      | True    |
-| Contribute to SDHA | Whether or not the plugin sends housing ward information to SDHA, the housing alerts Discord server. | True    |
 | Output Format      | The format results are displayed in.                                                                 | Simple  |
 
-# Template: Sample Plugin
-Simple example plugin for XivLauncher/Dalamud, that shows both a working plugin and an associated UI test project, to allow for building and tweaking the UI without having to run the game.
+## FAQ
 
-This is not designed to be the simplest possible example, but neither is it designed to cover everything you might want to do.
+### Can this plugin automatically sweep for me?
+**No.** It does not automate player actions in any way; you still have to teleport to each city, open the residential aethernet,
+and click through each tab manually. This plugin simply outputs any unbought houses it finds in each ward to the chat log.
 
-I'm mostly hoping this helps some people to build out their UIs without having to constantly jump in and out of game.
+### Why is it named PaissaHouse?
+Because it just sits there, silently, watching houses. Like a Paissa house.
 
+![A Paissa house.](https://img2.finalfantasyxiv.com/accimg2/88/98/8898053ff4d9416da5a1a6a31d280ba42840161a.jpg)
 
-### Main Points
-* Simple functional plugin
-  * Slash command
-  * Main UI
-  * Settings UI
-  * Image loading
-  * Plugin json
-* Simple, slightly-improved plugin configuration handling
-* Basic ImGui testbed application project
-  * Allows testing UI changes without needing to run the game
-  * UI environment provided should match what is seen in game
-  * Defaults to an invisible fullscreen overlay; can easily be changed to use an opaque window etc
-  * Currently relies more on copy/paste of your UI code than fully generic objects (though this could be done)
-* Project organization
-  * Copies all necessary plugin files to the output directory
-    * Does not copy dependencies that are provided by dalamud
-    * Output directory can be zipped directly and have exactly what is required
-  * Hides data files from visual studio to reduce clutter
-    * Also allows having data files in different paths than VS would usually allow if done in the IDE directly
-    
-  
-  The intention is less that any of this is used directly in other projects, and more to show how similar things can be done.
-  
-  The UIDev project could be used as-is, with just the UITest.cs file needing to be redone for your specific project UI.
-  
-  ### To Use
-  You'll need to fixup the library dependencies (for both projects), to point at your local dalamud binary directory.
-  
-  This will either be a custom dalamud build, or `%APPDATA%\XivLauncher\addon\Hooks\` for the current live release.
-  
-  After that, clear out what you don't need in UITest.cs, and implement your own local UI under Draw()
-  
+## Acknowledgements
+
+- [Dalamud](https://github.com/goatcorp/Dalamud) and [XIVLauncher](https://github.com/goatcorp/FFXIVQuickLauncher)
+- [Universalis](https://github.com/Universalis-FFXIV/Universalis) and Sonar for inspiration

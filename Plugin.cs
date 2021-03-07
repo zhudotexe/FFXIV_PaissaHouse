@@ -10,9 +10,10 @@ namespace AutoSweep
 {
     public class Plugin : IDalamudPlugin
     {
-        public string Name => "Auto Sweeper";
+        public string Name => "PaissaHouse";
 
-        private const string commandName = "/pautosweep";
+        // configuration constants
+        private const string commandName = "/psweep";
         private const int housingWardInfoOpcode = 0x015E; // https://github.com/SapphireServer/Sapphire/blob/master/src/common/Network/PacketDef/Ipcs.h#L257
 
         private DalamudPluginInterface pi;
@@ -34,7 +35,7 @@ namespace AutoSweep
 
             this.pi.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
-                HelpMessage = "Configure autosweep settings."
+                HelpMessage = "Configure PaissaHouse settings."
             });
 
             // event hooks

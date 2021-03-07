@@ -4,8 +4,6 @@ using System.Numerics;
 
 namespace AutoSweep
 {
-    // It is good to have this be disposable in general, in case you ever need it
-    // to do any cleanup
     class PluginUI : IDisposable
     {
         private Configuration configuration;
@@ -35,7 +33,7 @@ namespace AutoSweep
             }
 
             ImGui.SetNextWindowSize(new Vector2(300, 160), ImGuiCond.FirstUseEver);
-            if (ImGui.Begin("AutoSweep Configuration", ref this.settingsVisible, 
+            if (ImGui.Begin("PaissaHouse Configuration", ref this.settingsVisible, 
                 ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
             {
                 // enabled
@@ -50,15 +48,15 @@ namespace AutoSweep
                 }
 
                 // post
-                var postInfo = this.configuration.PostInfo;
-                if (ImGui.Checkbox("Contribute to SDHA", ref postInfo))
-                {
-                    this.configuration.PostInfo = postInfo;
-                }
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip("Whether or not the plugin sends housing ward information to SDHA, the housing alerts Discord server.");
-                }
+                // var postInfo = this.configuration.PostInfo;
+                // if (ImGui.Checkbox("Contribute to Discord communities", ref postInfo))
+                // {
+                //     this.configuration.PostInfo = postInfo;
+                // }
+                // if (ImGui.IsItemHovered())
+                // {
+                //     ImGui.SetTooltip("Whether or not the plugin sends housing ward information to housing Discord communities.");
+                // }
 
                 // output format
                 var outputFormat = this.configuration.OutputFormat;
