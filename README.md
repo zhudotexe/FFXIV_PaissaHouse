@@ -4,14 +4,18 @@ PaissaHouse is a simple plugin that runs in the background: when you view a hous
 ## Usage
 Simply install and it will happily run in the background.
 
-// TODO: add image of it working here.
-
 Use `/psweep` to open configuration, and `/psweep reset` to reset the internal sweep cache if you want to sweep the same district multiple times in a row.
 
 | Setting            | Description                                                                                          | Default |
 |--------------------|------------------------------------------------------------------------------------------------------|---------|
 | Enabled            | Whether or not the plugin is enabled. If disabled, it will not look for houses.                      | True    |
 | Output Format      | The format results are displayed in.                                                                 | Simple  |
+
+<figure>
+  <img src="https://cdn.discordapp.com/attachments/263128686004404225/817965077982085120/unknown.png">
+  <figcaption>The result of tabbing through all 24 wards in a few different districts.</figcaption>
+</figure>
+
 
 ## FAQ
 
