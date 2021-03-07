@@ -24,10 +24,10 @@ namespace AutoSweep.Structures
                         HouseInfoEntry infoEntry = new HouseInfoEntry();
                         infoEntry.HousePrice = binaryReader.ReadUInt32();
                         infoEntry.InfoFlags = (HousingFlags)binaryReader.ReadByte();
-                        infoEntry.HouseAppeals = new HousingAppeal[3];
+                        infoEntry.HouseAppeals = new byte[3];
                         for (int j = 0; j < 3; j++)
                         {
-                            infoEntry.HouseAppeals[j] = (HousingAppeal)binaryReader.ReadByte();
+                            infoEntry.HouseAppeals[j] = binaryReader.ReadByte();
                         }
                         infoEntry.EstateOwnerName = Encoding.UTF8.GetString(binaryReader.ReadBytes(32)).TrimEnd(new char[1]);
                         wardInfo.HouseInfoEntries[i] = infoEntry;
