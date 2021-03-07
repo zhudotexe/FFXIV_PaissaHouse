@@ -90,10 +90,29 @@ namespace AutoSweep
         private void OnFoundOpenHouse(HousingWardInfo wardInfo, HouseInfoEntry houseInfoEntry, int plotNumber)
         {
             var districtName = this.territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId).PlaceName.Value.Name;
-            var worldName = this.worlds.GetRow((uint)wardInfo.LandIdent.WorldId).Name;
-            // todo output with correct format
-            this.pi.Framework.Gui.Chat.Print(
-                $"Open plot found at {districtName} {wardInfo.LandIdent.WardNumber + 1}-{plotNumber + 1} ({houseInfoEntry.HousePrice} gil, {worldName})");
+            // var worldName = this.worlds.GetRow((uint)wardInfo.LandIdent.WorldId).Name;
+            var houseSize = this.housingLandSets.GetRow((uint)wardInfo.LandIdent.LandId).PlotSize[plotNumber];
+            
+            var districtNameNoSpaces = districtName.ToString().Replace(" ", "");
+            int wardNum = wardInfo.LandIdent.WardNumber + 1;
+            int plotNum = plotNumber + 1;
+            float housePriceMillions = houseInfoEntry.HousePrice / 1000000f;
+            string houseSizeName = houseSize == 0 ? "Small" : houseSize == 1 ? "Medium" : "Large";
+            
+            string output;
+            if (configuration.OutputFormat == OutputFormat.Pings)
+            {
+                output = $"@{houseSizeName}{districtNameNoSpaces} {wardNum}-{plotNum} ({housePriceMillions:F3}m)";
+            }
+            else if (configuration.OutputFormat == OutputFormat.EnoBot)
+            {
+                output = $"##forsale {districtNameNoSpaces} w{wardNum} p{plotNum}";
+            }
+            else // default to simple
+            {
+                output = $"{districtName} {wardNum}-{plotNum} ({housePriceMillions:F3}m)";
+            }
+            this.pi.Framework.Gui.Chat.Print(output);
         }
 
         // ==== UI ====
