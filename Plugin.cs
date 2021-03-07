@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using AutoSweep.Structures;
 using Dalamud.Game.Command;
 using Dalamud.Game.Internal.Network;
@@ -15,12 +16,21 @@ namespace AutoSweep
         // configuration constants
         private const string commandName = "/psweep";
         private const int housingWardInfoOpcode = 0x015E; // https://github.com/SapphireServer/Sapphire/blob/master/src/common/Network/PacketDef/Ipcs.h#L257
+        private const int numWardsPerDistrict = 24;
 
+        // frameworks/data
         private DalamudPluginInterface pi;
         private Configuration configuration;
         private PluginUI ui;
         private ExcelSheet<TerritoryType> territories;
         private ExcelSheet<World> worlds;
+        private ExcelSheet<HousingLandSet> housingLandSets;
+
+        // state
+        private int lastSweptDistrictTerritoryTypeId;
+        private int lastSweptDistrictWorldId;
+        private DateTime lastSweepTime;
+        private HashSet<int> lastSweptDistrictSeenWardNumbers = new HashSet<int>();
 
         public void Initialize(DalamudPluginInterface pluginInterface)
         {
@@ -32,6 +42,7 @@ namespace AutoSweep
             this.ui = new PluginUI(this.configuration);
             this.territories = pi.Data.GetExcelSheet<TerritoryType>();
             this.worlds = pi.Data.GetExcelSheet<World>();
+            this.housingLandSets = pi.Data.GetExcelSheet<HousingLandSet>();
 
             this.pi.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
@@ -56,8 +67,17 @@ namespace AutoSweep
 
         private void OnCommand(string command, string args)
         {
-            // command just opens settings
-            this.ui.SettingsVisible = true;
+            switch (args)
+            {
+                case "reset":
+                    lastSweptDistrictWorldId = -1;
+                    lastSweptDistrictTerritoryTypeId = -1;
+                    lastSweptDistrictSeenWardNumbers.Clear();
+                    break;
+                default:
+                    this.ui.SettingsVisible = true;
+                    break;
+            }
         }
 
         private void OnNetworkEvent(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction)
@@ -76,6 +96,37 @@ namespace AutoSweep
             HousingWardInfo wardInfo = HousingWardInfo.Read(dataPtr);
             PluginLog.LogDebug($"Got HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber}");
 
+            // if the current wardinfo is for a different district than the last swept one, print the header\
+            // or if the last sweep was > 10m ago
+            if (wardInfo.LandIdent.WorldId != lastSweptDistrictWorldId
+                || wardInfo.LandIdent.TerritoryTypeId != lastSweptDistrictTerritoryTypeId
+                || lastSweepTime < (DateTime.Now - TimeSpan.FromMinutes(10)))
+            {
+                // reset last sweep info to the current sweep
+                lastSweptDistrictWorldId = wardInfo.LandIdent.WorldId;
+                lastSweptDistrictTerritoryTypeId = wardInfo.LandIdent.TerritoryTypeId;
+                lastSweptDistrictSeenWardNumbers.Clear();
+                lastSweepTime = DateTime.Now;
+
+                var districtName = this.territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId).PlaceName.Value.Name;
+                var worldName = this.worlds.GetRow((uint)wardInfo.LandIdent.WorldId).Name;
+                this.pi.Framework.Gui.Chat.Print($"Began sweep for {districtName} ({worldName})");
+            }
+            
+            // if we've seen this ward already, ignore it
+            if (lastSweptDistrictSeenWardNumbers.Contains(wardInfo.LandIdent.WardNumber))
+            {
+                PluginLog.LogDebug($"Skipped processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber} because we have seen it already");
+                return;
+            }
+
+            // add the ward number to this sweep's seen numbers
+            lastSweptDistrictSeenWardNumbers.Add(wardInfo.LandIdent.WardNumber);
+            // if that's all the wards, give the user a cookie
+            if (lastSweptDistrictSeenWardNumbers.Count == numWardsPerDistrict)
+                this.pi.Framework.Gui.Chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you!");
+
+            // iterate over houses to find open houses
             for (int i = 0; i < wardInfo.HouseInfoEntries.Length; i++)
             {
                 HouseInfoEntry houseInfoEntry = wardInfo.HouseInfoEntries[i];
