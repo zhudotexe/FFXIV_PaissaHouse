@@ -15,7 +15,6 @@ namespace AutoSweep
 
         // configuration constants
         private const string commandName = "/psweep";
-        private const int housingWardInfoOpcode = 0x015E; // https://github.com/SapphireServer/Sapphire/blob/master/src/common/Network/PacketDef/Ipcs.h#L257
         private const int numWardsPerDistrict = 24;
 
         // frameworks/data
@@ -85,7 +84,7 @@ namespace AutoSweep
             if (!this.configuration.Enabled) return;
             if (direction != NetworkMessageDirection.ZoneDown) return;
             if (!this.pi.Data.IsDataReady) return;
-            if (opCode == housingWardInfoOpcode)
+            if (opCode == this.pi.Data.ServerOpCodes["HousingWardInfo"])
             {
                 this.OnHousingWardInfo(dataPtr);
             }
