@@ -46,7 +46,7 @@ namespace AutoSweep
 
             this.pi.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
-                HelpMessage = "Configure PaissaHouse settings."
+                HelpMessage = $"Configure PaissaHouse settings.\n\"{commandName} reset\" to reset a sweep if sweeping the same district multiple times in a row."
             });
 
             // event hooks
