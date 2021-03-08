@@ -94,7 +94,7 @@ namespace AutoSweep
         private void OnHousingWardInfo(IntPtr dataPtr)
         {
             HousingWardInfo wardInfo = HousingWardInfo.Read(dataPtr);
-            PluginLog.LogDebug($"Got HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber}");
+            PluginLog.LogDebug($"Got HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber} territory: {wardInfo.LandIdent.TerritoryTypeId}");
 
             // if the current wardinfo is for a different district than the last swept one, print the header\
             // or if the last sweep was > 10m ago
@@ -140,11 +140,15 @@ namespace AutoSweep
 
         private void OnFoundOpenHouse(HousingWardInfo wardInfo, HouseInfoEntry houseInfoEntry, int plotNumber)
         {
-            var districtName = this.territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId).PlaceName.Value.Name;
+            var districtName = this.territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId).PlaceName.Value.NameNoArticle;
             // var worldName = this.worlds.GetRow((uint)wardInfo.LandIdent.WorldId).Name;
-            var houseSize = this.housingLandSets.GetRow((uint)wardInfo.LandIdent.LandId).PlotSize[plotNumber];
             
-            var districtNameNoSpaces = districtName.ToString().Replace(" ", "").Replace("The", ""); // kinda gross but oh well
+            // gross way of getting the landset from the territorytype but the game does not send the correct landsetid
+            uint landSetIndex = (uint)wardInfo.LandIdent.TerritoryTypeId - 339;
+            landSetIndex = landSetIndex > 3 ? 3 : landSetIndex;
+            var houseSize = this.housingLandSets.GetRow(landSetIndex).PlotSize[plotNumber];
+            
+            var districtNameNoSpaces = districtName.ToString().Replace(" ", "");
             int wardNum = wardInfo.LandIdent.WardNumber + 1;
             int plotNum = plotNumber + 1;
             float housePriceMillions = houseInfoEntry.HousePrice / 1000000f;
