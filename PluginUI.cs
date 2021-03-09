@@ -32,7 +32,7 @@ namespace AutoSweep
                 return;
             }
 
-            ImGui.SetNextWindowSize(new Vector2(300, 160), ImGuiCond.FirstUseEver);
+            ImGui.SetNextWindowSize(new Vector2(450, 160), ImGuiCond.FirstUseEver);
             if (ImGui.Begin("PaissaHouse Configuration", ref this.settingsVisible, 
                 ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
             {
@@ -71,6 +71,16 @@ namespace AutoSweep
                             ImGui.SetItemDefaultFocus();
                     }
                     ImGui.EndCombo();
+                }
+                
+                // custom output format
+                if (this.configuration.OutputFormat == OutputFormat.Custom)
+                {
+                    string customOutputFormat = this.configuration.OutputFormatString;
+                    if (ImGui.InputText("Custom Output Format", ref customOutputFormat, 2000))
+                    {
+                        this.configuration.OutputFormatString = customOutputFormat;
+                    }
                 }
 
                 // save and close

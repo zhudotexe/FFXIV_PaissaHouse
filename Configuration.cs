@@ -7,12 +7,11 @@ namespace AutoSweep
     [Serializable]
     public class Configuration : IPluginConfiguration
     {
-        public int Version { get; set; } = 0;
+        public int Version { get; set; } = 1;
 
         public bool Enabled { get; set; } = true;
-
         public bool PostInfo { get; set; } = true;
-
+        public string OutputFormatString { get; set; } = "";
         public OutputFormat OutputFormat { get; set; } = OutputFormat.Simple;
 
         // the below exist just to make saving less cumbersome
@@ -47,5 +46,7 @@ namespace AutoSweep
         // ##forsale shirogane w5 p25
         // ...
         EnoBot = 3,
+        
+        Custom = 4,
     }
 }
