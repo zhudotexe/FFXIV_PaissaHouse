@@ -54,7 +54,7 @@ namespace AutoSweep
             this.pi.UiBuilder.OnBuildUi += DrawUI;
             this.pi.UiBuilder.OnOpenConfigUi += (sender, args) => DrawConfigUI();
 
-            PluginLog.LogDebug("Initialization complete");
+            PluginLog.LogDebug($"Initialization complete: configVersion={this.configuration.Version}");
         }
 
         public void Dispose()
@@ -112,7 +112,7 @@ namespace AutoSweep
                 var worldName = this.worlds.GetRow((uint)wardInfo.LandIdent.WorldId).Name;
                 this.pi.Framework.Gui.Chat.Print($"Began sweep for {districtName} ({worldName})");
             }
-            
+
             // if we've seen this ward already, ignore it
             if (lastSweptDistrictSeenWardNumbers.Contains(wardInfo.LandIdent.WardNumber))
             {
@@ -141,19 +141,19 @@ namespace AutoSweep
         private void OnFoundOpenHouse(HousingWardInfo wardInfo, HouseInfoEntry houseInfoEntry, int plotNumber)
         {
             var districtName = this.territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId).PlaceName.Value.NameNoArticle;
-            // var worldName = this.worlds.GetRow((uint)wardInfo.LandIdent.WorldId).Name;
-            
+            var worldName = this.worlds.GetRow((uint)wardInfo.LandIdent.WorldId).Name;
+
             // gross way of getting the landset from the territorytype but the game does not send the correct landsetid
             uint landSetIndex = (uint)wardInfo.LandIdent.TerritoryTypeId - 339;
             landSetIndex = landSetIndex > 3 ? 3 : landSetIndex;
             var houseSize = this.housingLandSets.GetRow(landSetIndex).PlotSize[plotNumber];
-            
+
             var districtNameNoSpaces = districtName.ToString().Replace(" ", "");
             int wardNum = wardInfo.LandIdent.WardNumber + 1;
             int plotNum = plotNumber + 1;
             float housePriceMillions = houseInfoEntry.HousePrice / 1000000f;
             string houseSizeName = houseSize == 0 ? "Small" : houseSize == 1 ? "Medium" : "Large";
-            
+
             string output;
             switch (configuration.OutputFormat)
             {
@@ -163,11 +163,30 @@ namespace AutoSweep
                 case OutputFormat.EnoBot:
                     output = $"##forsale {districtNameNoSpaces} w{wardNum} p{plotNum}";
                     break;
+                case OutputFormat.Custom:
+                    output = FormatCustomOutputString(this.configuration.OutputFormatString, districtName, districtNameNoSpaces, worldName, wardNum.ToString(), plotNum.ToString(),
+                        houseInfoEntry.HousePrice.ToString(), housePriceMillions.ToString("F3"), houseSizeName);
+                    break;
                 default:
                     output = $"{districtName} {wardNum}-{plotNum} ({housePriceMillions:F3}m)";
                     break;
             }
             this.pi.Framework.Gui.Chat.Print(output);
+        }
+
+        private string FormatCustomOutputString(string template, string districtName, string districtNameNoSpaces, string worldName, string wardNum, string plotNum,
+            string housePrice, string housePriceMillions, string houseSizeName)
+        {
+            // mildly disgusting
+            // why can't we have nice things like python :(
+            return template.Replace("{districtName}", districtName)
+                .Replace("{districtNameNoSpaces}", districtNameNoSpaces)
+                .Replace("{worldName}", worldName)
+                .Replace("{wardNum}", wardNum)
+                .Replace("{plotNum}", plotNum)
+                .Replace("{housePrice}", housePrice)
+                .Replace("{housePriceMillions}", housePriceMillions)
+                .Replace("{houseSizeName}", houseSizeName);
         }
 
         // ==== UI ====

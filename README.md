@@ -9,13 +9,26 @@ Use `/psweep` to open configuration, and `/psweep reset` to reset the internal s
 | Setting            | Description                                                                                          | Default |
 |--------------------|------------------------------------------------------------------------------------------------------|---------|
 | Enabled            | Whether or not the plugin is enabled. If disabled, it will not look for houses.                      | True    |
-| Output Format      | The format results are displayed in.                                                                 | Simple  |
+| Output Format      | The format results are displayed in. (See Custom Output Format below)                                | Simple  |
 
 <figure>
   <img src="https://cdn.discordapp.com/attachments/263128686004404225/817965077982085120/unknown.png">
   <figcaption>The result of tabbing through all 24 wards in a few different districts.</figcaption>
 </figure>
 
+### Custom Output Format
+If using `Custom` output format, use these variables surrounded with curly braces to customize your output (e.g. `{worldName}`):
+
+| Variable               | Description                                                       | Example           |
+|------------------------|-------------------------------------------------------------------|-------------------|
+| `districtName`         | The name of the housing district.                                 | The Lavender Beds |
+| `districtNameNoSpaces` | The name of the housing district, with no spaces or articles.     | LavenderBeds      |
+| `worldName`            | The name of the world.                                            | Diabolos          |
+| `wardNum`              | The ward number.                                                  | 24                |
+| `plotNum`              | The plot number.                                                  | 60                |
+| `housePrice`           | The price of the house as a raw number.                           | 3750000           |
+| `housePriceMillions`   | The price of the house divided by 1 million, to 3 decimal places. | 3.750             |
+| `houseSizeName`        | The name of the size of the house.                                | Medium            |
 
 ## FAQ
 
