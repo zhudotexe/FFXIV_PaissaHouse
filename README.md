@@ -21,14 +21,19 @@ If using `Custom` output format, use these variables surrounded with curly brace
 
 | Variable               | Description                                                       | Example           |
 |------------------------|-------------------------------------------------------------------|-------------------|
-| `districtName`         | The name of the housing district.                                 | The Lavender Beds |
-| `districtNameNoSpaces` | The name of the housing district, with no spaces or articles.     | LavenderBeds      |
+| `districtName`         | The name of the housing district.                                 | Lavender Beds     |
+| `districtNameNoSpaces` | The name of the housing district, with no spaces.                 | LavenderBeds      |
 | `worldName`            | The name of the world.                                            | Diabolos          |
 | `wardNum`              | The ward number.                                                  | 24                |
 | `plotNum`              | The plot number.                                                  | 60                |
 | `housePrice`           | The price of the house as a raw number.                           | 3750000           |
 | `housePriceMillions`   | The price of the house divided by 1 million, to 3 decimal places. | 3.750             |
 | `houseSizeName`        | The name of the size of the house.                                | Medium            |
+
+Example (Pings output format):
+```
+@{houseSizeName}{districtNameNoSpaces} {wardNum}-{plotNum} ({housePriceMillions}m)
+```
 
 ## FAQ
 

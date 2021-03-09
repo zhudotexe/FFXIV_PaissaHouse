@@ -164,8 +164,8 @@ namespace AutoSweep
                     output = $"##forsale {districtNameNoSpaces} w{wardNum} p{plotNum}";
                     break;
                 case OutputFormat.Custom:
-                    output = FormatCustomOutputString(this.configuration.OutputFormatString, districtName, districtNameNoSpaces, worldName, wardNum.ToString(), plotNum.ToString(),
-                        houseInfoEntry.HousePrice.ToString(), housePriceMillions.ToString("F3"), houseSizeName);
+                    output = FormatCustomOutputString(this.configuration.OutputFormatString, districtName.ToString(), districtNameNoSpaces, worldName, wardNum.ToString(),
+                        plotNum.ToString(), houseInfoEntry.HousePrice.ToString(), housePriceMillions.ToString("F3"), houseSizeName);
                     break;
                 default:
                     output = $"{districtName} {wardNum}-{plotNum} ({housePriceMillions:F3}m)";
