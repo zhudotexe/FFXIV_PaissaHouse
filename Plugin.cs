@@ -139,7 +139,8 @@ namespace AutoSweep
 
         private void OnFoundOpenHouse(HousingWardInfo wardInfo, HouseInfoEntry houseInfoEntry, int plotNumber)
         {
-            var districtName = this.territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId).PlaceName.Value.NameNoArticle;
+            var place = this.territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId).PlaceName.Value;
+            var districtName = place.NameNoArticle.RawString.Length > 0 ? place.NameNoArticle : place.Name; // languages like German do not use NameNoArticle (#2)
             var worldName = this.worlds.GetRow((uint)wardInfo.LandIdent.WorldId).Name;
 
             // gross way of getting the landset from the territorytype but the game does not send the correct landsetid
