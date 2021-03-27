@@ -49,13 +49,13 @@ namespace AutoSweep
 
                 // post
                 // var postInfo = this.configuration.PostInfo;
-                // if (ImGui.Checkbox("Contribute to Discord communities", ref postInfo))
+                // if (ImGui.Checkbox("Contribute to PaissaDB", ref postInfo))
                 // {
                 //     this.configuration.PostInfo = postInfo;
                 // }
                 // if (ImGui.IsItemHovered())
                 // {
-                //     ImGui.SetTooltip("Whether or not the plugin sends housing ward information to housing Discord communities.");
+                //     ImGui.SetTooltip("Whether or not the plugin sends housing ward information to PaissaDB, a crowdsourced housing plot aggregator.");
                 // }
 
                 // output format

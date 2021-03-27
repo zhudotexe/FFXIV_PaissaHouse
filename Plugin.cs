@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using AutoSweep.Paissa;
 using AutoSweep.Structures;
 using Dalamud.Game.Command;
 using Dalamud.Game.Internal.Network;
@@ -26,10 +26,8 @@ namespace AutoSweep
         private ExcelSheet<HousingLandSet> housingLandSets;
 
         // state
-        private int lastSweptDistrictTerritoryTypeId;
-        private int lastSweptDistrictWorldId;
-        private DateTime lastSweepTime;
-        private HashSet<int> lastSweptDistrictSeenWardNumbers = new HashSet<int>();
+        private HousingState housingState;
+        // private PaissaClient paissaClient;
 
         public void Initialize(DalamudPluginInterface pluginInterface)
         {
@@ -53,6 +51,9 @@ namespace AutoSweep
             this.pi.UiBuilder.OnBuildUi += DrawUI;
             this.pi.UiBuilder.OnOpenConfigUi += (sender, args) => DrawConfigUI();
 
+            // paissa setup
+            this.housingState = new HousingState();
+
             PluginLog.LogDebug($"Initialization complete: configVersion={this.configuration.Version}");
         }
 
@@ -69,9 +70,7 @@ namespace AutoSweep
             switch (args)
             {
                 case "reset":
-                    lastSweptDistrictWorldId = -1;
-                    lastSweptDistrictTerritoryTypeId = -1;
-                    lastSweptDistrictSeenWardNumbers.Clear();
+                    housingState.Reset();
                     break;
                 default:
                     this.ui.SettingsVisible = true;
@@ -95,17 +94,12 @@ namespace AutoSweep
             HousingWardInfo wardInfo = HousingWardInfo.Read(dataPtr);
             PluginLog.LogDebug($"Got HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber} territory: {wardInfo.LandIdent.TerritoryTypeId}");
 
-            // if the current wardinfo is for a different district than the last swept one, print the header\
+            // if the current wardinfo is for a different district than the last swept one, print the header
             // or if the last sweep was > 10m ago
-            if (wardInfo.LandIdent.WorldId != lastSweptDistrictWorldId
-                || wardInfo.LandIdent.TerritoryTypeId != lastSweptDistrictTerritoryTypeId
-                || lastSweepTime < (DateTime.Now - TimeSpan.FromMinutes(10)))
+            if (housingState.ShouldStartNewSweep(wardInfo))
             {
                 // reset last sweep info to the current sweep
-                lastSweptDistrictWorldId = wardInfo.LandIdent.WorldId;
-                lastSweptDistrictTerritoryTypeId = wardInfo.LandIdent.TerritoryTypeId;
-                lastSweptDistrictSeenWardNumbers.Clear();
-                lastSweepTime = DateTime.Now;
+                housingState.StartDistrictSweep(wardInfo);
 
                 var districtName = this.territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId).PlaceName.Value.Name;
                 var worldName = this.worlds.GetRow((uint)wardInfo.LandIdent.WorldId).Name;
@@ -113,16 +107,16 @@ namespace AutoSweep
             }
 
             // if we've seen this ward already, ignore it
-            if (lastSweptDistrictSeenWardNumbers.Contains(wardInfo.LandIdent.WardNumber))
+            if (housingState.LastSweptDistrictSeenWardNumbers.Contains(wardInfo.LandIdent.WardNumber))
             {
                 PluginLog.LogDebug($"Skipped processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber} because we have seen it already");
                 return;
             }
 
             // add the ward number to this sweep's seen numbers
-            lastSweptDistrictSeenWardNumbers.Add(wardInfo.LandIdent.WardNumber);
+            housingState.LastSweptDistrictSeenWardNumbers.Add(wardInfo.LandIdent.WardNumber);
             // if that's all the wards, give the user a cookie
-            if (lastSweptDistrictSeenWardNumbers.Count == numWardsPerDistrict)
+            if (housingState.LastSweptDistrictSeenWardNumbers.Count == numWardsPerDistrict)
                 this.pi.Framework.Gui.Chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you!");
 
             // iterate over houses to find open houses
@@ -134,6 +128,14 @@ namespace AutoSweep
                 if ((houseInfoEntry.InfoFlags & HousingFlags.PlotOwned) == 0)
                     this.OnFoundOpenHouse(wardInfo, houseInfoEntry, i);
             }
+
+            // post wardinfo to PaissaDB
+            if (configuration.PostInfo)
+            {
+                // todo
+                // paissaClient.post(wardInfo);
+            }
+
             PluginLog.LogDebug($"Done processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber}");
         }
 
