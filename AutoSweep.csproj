@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="packages\DalamudPackager.1.2.0\build\DalamudPackager.props" Condition="Exists('packages\DalamudPackager.1.2.0\build\DalamudPackager.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -46,11 +47,11 @@
     </Reference>
     <Reference Include="Lumina, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>packages\Lumina.2.5.1\lib\netstandard2.0\Lumina.dll</HintPath>
-      <Private>True</Private>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Lumina.Excel, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>packages\Lumina.Excel.5.40.0\lib\netstandard2.0\Lumina.Excel.dll</HintPath>
-      <Private>True</Private>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -79,4 +80,12 @@
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105.The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('packages\DalamudPackager.1.2.0\build\DalamudPackager.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\DalamudPackager.1.2.0\build\DalamudPackager.props'))" />
+    <Error Condition="!Exists('packages\DalamudPackager.1.2.0\build\DalamudPackager.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\DalamudPackager.1.2.0\build\DalamudPackager.targets'))" />
+  </Target>
+  <Import Project="packages\DalamudPackager.1.2.0\build\DalamudPackager.targets" Condition="Exists('packages\DalamudPackager.1.2.0\build\DalamudPackager.targets')" />
 </Project>
