@@ -27,7 +27,7 @@ namespace AutoSweep
 
         // state
         private HousingState housingState;
-        // private PaissaClient paissaClient;
+        private PaissaClient paissaClient;
 
         public void Initialize(DalamudPluginInterface pluginInterface)
         {
@@ -53,6 +53,7 @@ namespace AutoSweep
 
             // paissa setup
             this.housingState = new HousingState();
+            this.paissaClient = new PaissaClient();
 
             PluginLog.LogDebug($"Initialization complete: configVersion={this.configuration.Version}");
         }
@@ -63,6 +64,7 @@ namespace AutoSweep
             this.pi.Framework.Network.OnNetworkMessage -= OnNetworkEvent;
             this.pi.CommandManager.RemoveHandler(commandName);
             this.pi.Dispose();
+            this.paissaClient.Dispose();
         }
 
         private void OnCommand(string command, string args)
@@ -132,8 +134,7 @@ namespace AutoSweep
             // post wardinfo to PaissaDB
             if (configuration.PostInfo)
             {
-                // todo
-                // paissaClient.post(wardInfo);
+                paissaClient.PostWardInfo(wardInfo);
             }
 
             PluginLog.LogDebug($"Done processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber}");
