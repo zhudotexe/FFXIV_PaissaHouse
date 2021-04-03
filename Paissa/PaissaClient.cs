@@ -15,12 +15,12 @@ namespace AutoSweep.Paissa
 {
     public class PaissaClient : IDisposable
     {
-        private HttpClient http;
-        private DalamudPluginInterface pi;
+        private readonly HttpClient http;
+        private readonly DalamudPluginInterface pi;
         private bool needsHello = true;
 
         private const string apiBase = "http://127.0.0.1:8000"; // todo use an actual server
-        private const string secret = "supersecretsecret"; // todo
+        private const string secret = Secrets.JwtSecret;
 
         public PaissaClient(DalamudPluginInterface pi)
         {

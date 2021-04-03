@@ -75,6 +75,7 @@
     <Compile Include="Configuration.cs" />
     <Compile Include="Paissa\HousingState.cs" />
     <Compile Include="Paissa\PaissaClient.cs" />
+    <Compile Include="Paissa\Secrets.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="PluginUI.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
