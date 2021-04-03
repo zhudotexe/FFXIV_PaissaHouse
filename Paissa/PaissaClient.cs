@@ -20,6 +20,7 @@ namespace AutoSweep.Paissa
         private bool needsHello = true;
 
         private const string apiBase = "http://127.0.0.1:8000"; // todo use an actual server
+        private const string secret = "supersecretsecret"; // todo
 
         public PaissaClient(DalamudPluginInterface pi)
         {
@@ -42,14 +43,15 @@ namespace AutoSweep.Paissa
          */
         public async void Hello()
         {
-            if (pi.ClientState.LocalPlayer == null)
+            var player = pi.ClientState.LocalPlayer;
+            if (player == null)
                 return;
             var charInfo = new Dictionary<string, object>()
             {
                 {"cid", pi.ClientState.LocalContentId},
-                {"name", pi.ClientState.LocalPlayer.Name},
-                {"world", pi.ClientState.LocalPlayer.HomeWorld.GameData.Name.ToString()},
-                {"worldId", pi.ClientState.LocalPlayer.HomeWorld.Id}
+                {"name", player.Name},
+                {"world", player.HomeWorld.GameData.Name.ToString()},
+                {"worldId", player.HomeWorld.Id}
             };
             var content = JsonConvert.SerializeObject(charInfo);
             PluginLog.Debug(content);
@@ -103,7 +105,7 @@ namespace AutoSweep.Paissa
         {
             return JwtBuilder.Create()
                 .WithAlgorithm(new HMACSHA256Algorithm())
-                .WithSecret("secret")
+                .WithSecret(secret)
                 .AddClaim("cid", pi.ClientState.LocalContentId)
                 .AddClaim("iss", "PaissaHouse")
                 .AddClaim("aud", "PaissaDB")
