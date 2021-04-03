@@ -1,8 +1,8 @@
 {
-  "Author": "mommothazaz123",
+  "Author": "zhudotexe",
   "Name": "PaissaHouse",
   "Description": "Makes note of open houses when viewing a housing ward from an aetheryte.",
-  "RepoUrl": "https://github.com/mommothazaz123/FFXIV_PaissaHouse",
+  "RepoUrl": "https://github.com/zhudotexe/FFXIV_PaissaHouse",
   "ApplicableVersion": "any",
   "Tags": ["housing"],
   "DalamudApiLevel": 2
