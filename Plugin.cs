@@ -53,7 +53,7 @@ namespace AutoSweep
 
             // paissa setup
             this.housingState = new HousingState();
-            this.paissaClient = new PaissaClient();
+            this.paissaClient = new PaissaClient(this.pi);
 
             PluginLog.LogDebug($"Initialization complete: configVersion={this.configuration.Version}");
         }
@@ -63,14 +63,13 @@ namespace AutoSweep
             this.ui.Dispose();
             this.pi.Framework.Network.OnNetworkMessage -= OnNetworkEvent;
             this.pi.CommandManager.RemoveHandler(commandName);
+            this.paissaClient?.Dispose();
             this.pi.Dispose();
-            this.paissaClient.Dispose();
         }
 
         private void OnCommand(string command, string args)
         {
-            switch (args)
-            {
+            switch (args) {
                 case "reset":
                     housingState.Reset();
                     break;
@@ -85,8 +84,7 @@ namespace AutoSweep
             if (!this.configuration.Enabled) return;
             if (direction != NetworkMessageDirection.ZoneDown) return;
             if (!this.pi.Data.IsDataReady) return;
-            if (opCode == this.pi.Data.ServerOpCodes["HousingWardInfo"])
-            {
+            if (opCode == this.pi.Data.ServerOpCodes["HousingWardInfo"]) {
                 this.OnHousingWardInfo(dataPtr);
             }
         }
@@ -98,8 +96,7 @@ namespace AutoSweep
 
             // if the current wardinfo is for a different district than the last swept one, print the header
             // or if the last sweep was > 10m ago
-            if (housingState.ShouldStartNewSweep(wardInfo))
-            {
+            if (housingState.ShouldStartNewSweep(wardInfo)) {
                 // reset last sweep info to the current sweep
                 housingState.StartDistrictSweep(wardInfo);
 
@@ -109,8 +106,7 @@ namespace AutoSweep
             }
 
             // if we've seen this ward already, ignore it
-            if (housingState.LastSweptDistrictSeenWardNumbers.Contains(wardInfo.LandIdent.WardNumber))
-            {
+            if (housingState.LastSweptDistrictSeenWardNumbers.Contains(wardInfo.LandIdent.WardNumber)) {
                 PluginLog.LogDebug($"Skipped processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber} because we have seen it already");
                 return;
             }
@@ -122,8 +118,7 @@ namespace AutoSweep
                 this.pi.Framework.Gui.Chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you!");
 
             // iterate over houses to find open houses
-            for (int i = 0; i < wardInfo.HouseInfoEntries.Length; i++)
-            {
+            for (int i = 0; i < wardInfo.HouseInfoEntries.Length; i++) {
                 HouseInfoEntry houseInfoEntry = wardInfo.HouseInfoEntries[i];
                 PluginLog.LogVerbose(
                     $"Got {wardInfo.LandIdent.WardNumber + 1}-{i + 1}: owned by {houseInfoEntry.EstateOwnerName}, flags {houseInfoEntry.InfoFlags}, price {houseInfoEntry.HousePrice}");
@@ -132,10 +127,8 @@ namespace AutoSweep
             }
 
             // post wardinfo to PaissaDB
-            if (configuration.PostInfo)
-            {
-                paissaClient.PostWardInfo(wardInfo);
-            }
+            if (this.configuration.PostInfo)
+                paissaClient?.PostWardInfo(wardInfo);
 
             PluginLog.LogDebug($"Done processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber}");
         }
@@ -158,8 +151,7 @@ namespace AutoSweep
             string houseSizeName = houseSize == 0 ? "Small" : houseSize == 1 ? "Medium" : "Large";
 
             string output;
-            switch (configuration.OutputFormat)
-            {
+            switch (configuration.OutputFormat) {
                 case OutputFormat.Pings:
                     output = $"@{houseSizeName}{districtNameNoSpaces} {wardNum}-{plotNum} ({housePriceMillions:F3}m)";
                     break;
