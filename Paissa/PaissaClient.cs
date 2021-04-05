@@ -7,8 +7,7 @@ using System.Threading.Tasks;
 using AutoSweep.Structures;
 using Dalamud.Game.Internal;
 using Dalamud.Plugin;
-using JWT.Algorithms;
-using JWT.Builder;
+using Jose;
 using Newtonsoft.Json;
 
 namespace AutoSweep.Paissa
@@ -20,7 +19,7 @@ namespace AutoSweep.Paissa
         private bool needsHello = true;
 
         private const string apiBase = "http://127.0.0.1:8000"; // todo use an actual server
-        private const string secret = Secrets.JwtSecret;
+        private readonly byte[] secret = Encoding.UTF8.GetBytes(Secrets.JwtSecret);
 
         public PaissaClient(DalamudPluginInterface pi)
         {
@@ -89,7 +88,7 @@ namespace AutoSweep.Paissa
                 Content = new StringContent(content, Encoding.UTF8, "application/json"),
                 Headers =
                 {
-                    Authorization = new AuthenticationHeaderValue("Bearer", GenerateJWT())
+                    Authorization = new AuthenticationHeaderValue("Bearer", GenerateJwt())
                 }
             };
             try {
@@ -101,16 +100,16 @@ namespace AutoSweep.Paissa
             }
         }
 
-        private string GenerateJWT()
+        private string GenerateJwt()
         {
-            return JwtBuilder.Create()
-                .WithAlgorithm(new HMACSHA256Algorithm())
-                .WithSecret(secret)
-                .AddClaim("cid", pi.ClientState.LocalContentId)
-                .AddClaim("iss", "PaissaHouse")
-                .AddClaim("aud", "PaissaDB")
-                .AddClaim("iat", DateTimeOffset.Now.ToUnixTimeSeconds())
-                .Encode();
+            var payload = new Dictionary<string, object>()
+            {
+                {"cid", pi.ClientState.LocalContentId},
+                {"iss", "PaissaHouse"},
+                {"aud", "PaissaDB"},
+                {"iat", DateTimeOffset.Now.ToUnixTimeSeconds()}
+            };
+            return JWT.Encode(payload, secret, JwsAlgorithm.HS256);
         }
     }
 }
