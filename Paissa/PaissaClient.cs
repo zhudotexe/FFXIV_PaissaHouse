@@ -94,6 +94,10 @@ namespace AutoSweep.Paissa
             try {
                 var response = await http.SendAsync(request);
                 PluginLog.Debug($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase})");
+                if (!response.IsSuccessStatusCode) {
+                    var respText = await response.Content.ReadAsStringAsync();
+                    PluginLog.Warning($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase}):\n{respText}");
+                }
             }
             catch (Exception e) {
                 PluginLog.Warning(e, $"{request.Method} {request.RequestUri} raised an error:");
