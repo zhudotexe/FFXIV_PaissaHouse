@@ -25,7 +25,7 @@ namespace AutoSweep.Structures
     {
         public uint HousePrice;
         public HousingFlags InfoFlags;
-        public byte[] HouseAppeals;
+        public sbyte[] HouseAppeals;
         public string EstateOwnerName;
     }
 
