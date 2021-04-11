@@ -109,8 +109,8 @@ namespace AutoSweep.Paissa
             var payload = new Dictionary<string, object>()
             {
                 {"cid", pi.ClientState.LocalContentId},
-                {"iss", "PaissaHouse"},
-                {"aud", "PaissaDB"},
+                {"aud", "PaissaHouse"},
+                {"iss", "PaissaDB"},
                 {"iat", DateTimeOffset.Now.ToUnixTimeSeconds()}
             };
             return JWT.Encode(payload, secret, JwsAlgorithm.HS256);
