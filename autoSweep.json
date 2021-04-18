@@ -5,5 +5,5 @@
   "RepoUrl": "https://github.com/zhudotexe/FFXIV_PaissaHouse",
   "ApplicableVersion": "any",
   "Tags": ["housing"],
-  "DalamudApiLevel": 2
+  "DalamudApiLevel": 3
 }
