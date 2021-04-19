@@ -87,6 +87,9 @@ namespace AutoSweep
             if (opCode == this.pi.Data.ServerOpCodes["HousingWardInfo"]) {
                 this.OnHousingWardInfo(dataPtr);
             }
+            else if (opCode == this.pi.Data.ServerOpCodes["LandUpdate"]) {
+                this.OnLandUpdate(dataPtr);
+            }
         }
 
         private void OnHousingWardInfo(IntPtr dataPtr)
@@ -131,6 +134,13 @@ namespace AutoSweep
                 paissaClient?.PostWardInfo(wardInfo);
 
             PluginLog.LogDebug($"Done processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber}");
+        }
+
+        private void OnLandUpdate(IntPtr dataPtr)
+        {
+            LandUpdate landUpdate = LandUpdate.Read(dataPtr);
+            PluginLog.LogDebug($"Got LandUpdate for ward: {landUpdate.LandIdent.WardNumber} plot: {landUpdate.LandIdent.LandId} territory: {landUpdate.LandIdent.TerritoryTypeId}");
+            PluginLog.LogDebug($"PlotSize: {landUpdate.LandStruct.PlotSize} HouseState: {landUpdate.LandStruct.HouseState} Flags: {landUpdate.LandStruct.Flags} IconAddIcon: {landUpdate.LandStruct.IconAddIcon}");
         }
 
         private void OnFoundOpenHouse(HousingWardInfo wardInfo, HouseInfoEntry houseInfoEntry, int plotNumber)

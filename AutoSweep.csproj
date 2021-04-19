@@ -82,6 +82,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Structures\HousingWardInfo.cs" />
     <Compile Include="Structures\HousingCommon.cs" />
+    <Compile Include="Structures\LandUpdate.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="autoSweep.json">
