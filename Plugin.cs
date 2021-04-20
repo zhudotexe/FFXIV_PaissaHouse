@@ -121,18 +121,8 @@ namespace AutoSweep
             if (housingState.LastSweptDistrictSeenWardNumbers.Count == numWardsPerDistrict)
                 this.pi.Framework.Gui.Chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you!");
 
-            // iterate over houses to find open houses
-            for (int i = 0; i < wardInfo.HouseInfoEntries.Length; i++) {
-                HouseInfoEntry houseInfoEntry = wardInfo.HouseInfoEntries[i];
-                PluginLog.LogVerbose(
-                    $"Got {wardInfo.LandIdent.WardNumber + 1}-{i + 1}: owned by {houseInfoEntry.EstateOwnerName}, flags {houseInfoEntry.InfoFlags}, price {houseInfoEntry.HousePrice}");
-                if ((houseInfoEntry.InfoFlags & HousingFlags.PlotOwned) == 0)
-                    this.OnFoundOpenHouse(wardInfo.LandIdent, houseInfoEntry.HousePrice, i);
-            }
-
             // post wardinfo to PaissaDB
-            if (this.configuration.PostInfo)
-                paissaClient?.PostWardInfo(wardInfo);
+            paissaClient?.PostWardInfo(wardInfo);
 
             PluginLog.LogDebug($"Done processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber}");
         }
@@ -144,12 +134,11 @@ namespace AutoSweep
             PluginLog.LogDebug(
                 $"PlotSize: {landUpdate.LandStruct.PlotSize} HouseState: {landUpdate.LandStruct.HouseState} Flags: {landUpdate.LandStruct.Flags} IconAddIcon: {landUpdate.LandStruct.IconAddIcon}");
             pi.Framework.Gui.Chat.Print(JsonConvert.SerializeObject(landUpdate));
-            
-            // todo: post to PaissaDB
-            // if (this.configuration.PostInfo)
-            //     paissaClient?.PostLandUpdate(landUpdate);
 
-            PluginLog.LogDebug($"Done processing LandUpdate for plot: {landUpdate.LandIdent.WardNumber}-{landUpdate.LandIdent.LandId}");
+            // todo: post to PaissaDB
+            // paissaClient?.PostLandUpdate(landUpdate);
+
+            PluginLog.LogDebug($"Done processing LandUpdate for plot: {landUpdate.LandIdent.WardNumber + 1}-{landUpdate.LandIdent.LandId + 1}");
         }
 
         private void OnFoundOpenHouse(LandIdent landIdent, uint? price, int plotNumber)
@@ -190,11 +179,11 @@ namespace AutoSweep
         private uint TerritoryTypeIdToLandSetId(int territoryTypeId)
         {
             switch (territoryTypeId) {
-                case 641:  // shirogane
+                case 641: // shirogane
                     return 3;
                 case 886: // firmament?
                     return 4;
-                default:  // mist, lb, gob are 339-341
+                default: // mist, lb, gob are 339-341
                     return (uint)territoryTypeId - 339;
             }
         }

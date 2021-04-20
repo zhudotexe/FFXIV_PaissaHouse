@@ -27,70 +27,84 @@ namespace AutoSweep
 
         public void DrawSettingsWindow()
         {
-            if (!SettingsVisible)
-            {
+            if (!SettingsVisible) {
                 return;
             }
 
             ImGui.SetNextWindowSize(new Vector2(450, 160), ImGuiCond.FirstUseEver);
-            if (ImGui.Begin("PaissaHouse Configuration", ref this.settingsVisible, 
-                ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
-            {
-                // enabled
-                var enabled = this.configuration.Enabled;
-                if (ImGui.Checkbox("Enabled", ref enabled))
-                {
-                    this.configuration.Enabled = enabled;
-                }
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip("Whether or not the plugin is enabled. If disabled, it will not look for houses.");
-                }
+            if (ImGui.Begin("PaissaHouse Configuration", ref this.settingsVisible,
+                ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)) {
+                // tab bar
+                if (ImGui.BeginTabBar("paissatabs")) {
+                    // tab: settings
+                    if (ImGui.BeginTabItem("Settings")) {
+                        // enabled
+                        var enabled = this.configuration.Enabled;
+                        if (ImGui.Checkbox("Enabled", ref enabled)) {
+                            this.configuration.Enabled = enabled;
+                        }
+                        if (ImGui.IsItemHovered()) {
+                            ImGui.SetTooltip("Enable or disable PaissaHouse. If disabled, it will not look for houses, post ward information to PaissaDB, or send notifications.");
+                        }
 
-                // post
-                var postInfo = this.configuration.PostInfo;
-                if (ImGui.Checkbox("Contribute to PaissaDB", ref postInfo))
-                {
-                    this.configuration.PostInfo = postInfo;
-                }
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip("Whether or not the plugin sends housing ward information to PaissaDB, a crowdsourced housing plot aggregator.");
-                }
+                        // output format
+                        var outputFormat = this.configuration.OutputFormat;
+                        if (ImGui.BeginCombo("Output Format", outputFormat.ToString())) {
+                            foreach (OutputFormat format in Enum.GetValues(typeof(OutputFormat))) {
+                                bool selected = format == outputFormat;
+                                if (ImGui.Selectable(format.ToString(), selected))
+                                    this.configuration.OutputFormat = format;
+                                if (selected)
+                                    ImGui.SetItemDefaultFocus();
+                            }
+                            ImGui.EndCombo();
+                        }
 
-                // output format
-                var outputFormat = this.configuration.OutputFormat;
-                if (ImGui.BeginCombo("Output Format", outputFormat.ToString()))
-                {
-                    foreach (OutputFormat format in Enum.GetValues(typeof(OutputFormat)))
-                    {
-                        bool selected = format == outputFormat;
-                        if (ImGui.Selectable(format.ToString(), selected))
-                            this.configuration.OutputFormat = format;
-                        if (selected)
-                            ImGui.SetItemDefaultFocus();
+                        // custom output format
+                        if (this.configuration.OutputFormat == OutputFormat.Custom) {
+                            string customOutputFormat = this.configuration.OutputFormatString;
+                            if (ImGui.InputText("Custom Output Format", ref customOutputFormat, 2000)) {
+                                this.configuration.OutputFormatString = customOutputFormat;
+                            }
+                        }
+                        ImGui.EndTabItem();
                     }
-                    ImGui.EndCombo();
-                }
-                
-                // custom output format
-                if (this.configuration.OutputFormat == OutputFormat.Custom)
-                {
-                    string customOutputFormat = this.configuration.OutputFormatString;
-                    if (ImGui.InputText("Custom Output Format", ref customOutputFormat, 2000))
-                    {
-                        this.configuration.OutputFormatString = customOutputFormat;
-                    }
+                    DrawTabItemForDistrict("Mist", configuration.Mist);
+                    DrawTabItemForDistrict("The Lavender Beds", configuration.LavenderBeds);
+                    DrawTabItemForDistrict("The Goblet", configuration.Goblet);
+                    DrawTabItemForDistrict("Shirogane", configuration.Shirogane);
+                    // DrawTabItemForDistrict("The Firmament", configuration.Firmament);
+                    ImGui.EndTabBar();
+                    ImGui.Separator();
                 }
 
                 // save and close
-                if (ImGui.Button("Save and Close"))
-                {
+                if (ImGui.Button("Save and Close")) {
                     this.configuration.Save();
                     this.SettingsVisible = false;
                 }
             }
             ImGui.End();
+        }
+
+        public void DrawTabItemForDistrict(string districtName, DistrictNotifConfig notifConfig)
+        {
+            if (ImGui.BeginTabItem(districtName)) {
+                ImGui.Text($"This tab controls which houses to receive notifications for in {districtName}.");
+                var small = notifConfig.Small;
+                if (ImGui.Checkbox("Small", ref small)) {
+                    notifConfig.Small = small;
+                }
+                var medium = notifConfig.Medium;
+                if (ImGui.Checkbox("Medium", ref medium)) {
+                    notifConfig.Medium = medium;
+                }
+                var large = notifConfig.Large;
+                if (ImGui.Checkbox("Large", ref large)) {
+                    notifConfig.Large = large;
+                }
+                ImGui.EndTabItem();
+            }
         }
 
         public void Dispose()

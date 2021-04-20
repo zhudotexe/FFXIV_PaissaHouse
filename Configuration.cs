@@ -7,15 +7,19 @@ namespace AutoSweep
     [Serializable]
     public class Configuration : IPluginConfiguration
     {
-        public int Version { get; set; } = 1;
+        public int Version { get; set; } = 2;
 
         public bool Enabled { get; set; } = true;
-        public bool PostInfo { get; set; } = true;
         public string OutputFormatString { get; set; } = "";
         public OutputFormat OutputFormat { get; set; } = OutputFormat.Simple;
 
-        // the below exist just to make saving less cumbersome
+        public DistrictNotifConfig Mist { get; set; } = new DistrictNotifConfig();
+        public DistrictNotifConfig LavenderBeds { get; set; } = new DistrictNotifConfig();
+        public DistrictNotifConfig Goblet { get; set; } = new DistrictNotifConfig();
+        public DistrictNotifConfig Shirogane { get; set; } = new DistrictNotifConfig();
+        public DistrictNotifConfig Firmament { get; set; } = new DistrictNotifConfig();  // futureproofing :)
 
+        // the below exist just to make saving less cumbersome
         [NonSerialized]
         private DalamudPluginInterface pluginInterface;
 
@@ -28,6 +32,14 @@ namespace AutoSweep
         {
             this.pluginInterface.SavePluginConfig(this);
         }
+    }
+    
+    [Serializable]
+    public class DistrictNotifConfig
+    {
+        public bool Small { get; set; } = true;
+        public bool Medium { get; set; } = true;
+        public bool Large { get; set; } = true;
     }
 
     public enum OutputFormat
