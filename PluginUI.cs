@@ -31,7 +31,7 @@ namespace AutoSweep
                 return;
             }
 
-            ImGui.SetNextWindowSize(new Vector2(450, 160), ImGuiCond.FirstUseEver);
+            ImGui.SetNextWindowSize(new Vector2(450, 210), ImGuiCond.FirstUseEver);
             if (ImGui.Begin("PaissaHouse Configuration", ref this.settingsVisible,
                 ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)) {
                 // tab bar
