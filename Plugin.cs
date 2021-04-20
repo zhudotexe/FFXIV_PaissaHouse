@@ -6,6 +6,7 @@ using Dalamud.Game.Internal.Network;
 using Dalamud.Plugin;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
+using Newtonsoft.Json;
 
 namespace AutoSweep
 {
@@ -123,7 +124,7 @@ namespace AutoSweep
                 PluginLog.LogVerbose(
                     $"Got {wardInfo.LandIdent.WardNumber + 1}-{i + 1}: owned by {houseInfoEntry.EstateOwnerName}, flags {houseInfoEntry.InfoFlags}, price {houseInfoEntry.HousePrice}");
                 if ((houseInfoEntry.InfoFlags & HousingFlags.PlotOwned) == 0)
-                    this.OnFoundOpenHouse(wardInfo, houseInfoEntry, i);
+                    this.OnFoundOpenHouse(wardInfo.LandIdent, houseInfoEntry.HousePrice, i);
             }
 
             // post wardinfo to PaissaDB
@@ -132,22 +133,21 @@ namespace AutoSweep
 
             PluginLog.LogDebug($"Done processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber}");
         }
-
-        private void OnFoundOpenHouse(HousingWardInfo wardInfo, HouseInfoEntry houseInfoEntry, int plotNumber)
+        
+        private void OnFoundOpenHouse(LandIdent landIdent, uint? price, int plotNumber)
         {
-            var place = this.territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId).PlaceName.Value;
+            var place = this.territories.GetRow((uint)landIdent.TerritoryTypeId).PlaceName.Value;
             var districtName = place.NameNoArticle.RawString.Length > 0 ? place.NameNoArticle : place.Name; // languages like German do not use NameNoArticle (#2)
-            var worldName = this.worlds.GetRow((uint)wardInfo.LandIdent.WorldId).Name;
+            var worldName = this.worlds.GetRow((uint)landIdent.WorldId).Name;
 
-            // gross way of getting the landset from the territorytype but the game does not send the correct landsetid
-            uint landSetIndex = (uint)wardInfo.LandIdent.TerritoryTypeId - 339;
-            landSetIndex = landSetIndex > 3 ? 3 : landSetIndex;
-            var houseSize = this.housingLandSets.GetRow(landSetIndex).PlotSize[plotNumber];
+            var landSet = housingLandSets.GetRow(TerritoryTypeIdToLandSetId(landIdent.TerritoryTypeId));
+            var houseSize = landSet.PlotSize[plotNumber];
+            var realPrice = price.GetValueOrDefault(landSet.InitialPrice[plotNumber]); // if price is null, it's probably the default price (landupdate)
 
             var districtNameNoSpaces = districtName.ToString().Replace(" ", "");
-            int wardNum = wardInfo.LandIdent.WardNumber + 1;
+            int wardNum = landIdent.WardNumber + 1;
             int plotNum = plotNumber + 1;
-            float housePriceMillions = houseInfoEntry.HousePrice / 1000000f;
+            float housePriceMillions = realPrice / 1000000f;
             string houseSizeName = houseSize == 0 ? "Small" : houseSize == 1 ? "Medium" : "Large";
 
             string output;
@@ -160,13 +160,25 @@ namespace AutoSweep
                     break;
                 case OutputFormat.Custom:
                     output = FormatCustomOutputString(this.configuration.OutputFormatString, districtName.ToString(), districtNameNoSpaces, worldName, wardNum.ToString(),
-                        plotNum.ToString(), houseInfoEntry.HousePrice.ToString(), housePriceMillions.ToString("F3"), houseSizeName);
+                        plotNum.ToString(), realPrice.ToString(), housePriceMillions.ToString("F3"), houseSizeName);
                     break;
                 default:
                     output = $"{districtName} {wardNum}-{plotNum} ({housePriceMillions:F3}m)";
                     break;
             }
             this.pi.Framework.Gui.Chat.Print(output);
+        }
+
+        private uint TerritoryTypeIdToLandSetId(int territoryTypeId)
+        {
+            switch (territoryTypeId) {
+                case 641:  // shirogane
+                    return 3;
+                case 886: // firmament?
+                    return 4;
+                default:  // mist, lb, gob are 339-341
+                    return (uint)territoryTypeId - 339;
+            }
         }
 
         private string FormatCustomOutputString(string template, string districtName, string districtNameNoSpaces, string worldName, string wardNum, string plotNum,
