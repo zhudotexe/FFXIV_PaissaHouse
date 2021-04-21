@@ -18,7 +18,12 @@ namespace AutoSweep.Paissa
         private readonly DalamudPluginInterface pi;
         private bool needsHello = true;
 
-        private const string apiBase = "http://127.0.0.1:8000"; // todo use an actual server
+#if DEBUG
+        private const string apiBase = "http://127.0.0.1:8000";
+#else
+        private const string apiBase = "https://paissadb.zhu.codes";
+#endif
+
         private readonly byte[] secret = Encoding.UTF8.GetBytes(Secrets.JwtSecret);
 
         public PaissaClient(DalamudPluginInterface pi)
