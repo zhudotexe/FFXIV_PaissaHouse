@@ -115,10 +115,18 @@ namespace AutoSweep
             housingState.LastSweptDistrictSeenWardNumbers.Add(wardInfo.LandIdent.WardNumber);
             // if that's all the wards, give the user a cookie
             if (housingState.LastSweptDistrictSeenWardNumbers.Count == numWardsPerDistrict)
-                this.pi.Framework.Gui.Chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you!");
+                this.pi.Framework.Gui.Chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you for your contribution!");
 
             // post wardinfo to PaissaDB
             paissaClient?.PostWardInfo(wardInfo);
+            
+            // iterate over houses to find open houses
+            // todo remove me and use a socket
+            for (int i = 0; i < wardInfo.HouseInfoEntries.Length; i++) {
+                HouseInfoEntry houseInfoEntry = wardInfo.HouseInfoEntries[i];
+                if ((houseInfoEntry.InfoFlags & HousingFlags.PlotOwned) == 0)
+                    this.OnFoundOpenHouse(wardInfo.LandIdent, houseInfoEntry.HousePrice, i);
+            }
 
             PluginLog.LogDebug($"Done processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber}");
         }

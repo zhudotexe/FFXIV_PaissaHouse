@@ -102,10 +102,12 @@ namespace AutoSweep.Paissa
                 if (!response.IsSuccessStatusCode) {
                     var respText = await response.Content.ReadAsStringAsync();
                     PluginLog.Warning($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase}):\n{respText}");
+                    pi.Framework.Gui.Chat.PrintError($"There was an error connecting to PaissaDB: {response.ReasonPhrase}");
                 }
             }
             catch (Exception e) {
                 PluginLog.Warning(e, $"{request.Method} {request.RequestUri} raised an error:");
+                pi.Framework.Gui.Chat.PrintError("There was an error connecting to PaissaDB.");
             }
         }
 
