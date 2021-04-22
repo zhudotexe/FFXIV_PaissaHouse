@@ -25,10 +25,12 @@ namespace AutoSweep.Structures
                         for (int j = 0; j < 3; j++) {
                             infoEntry.HouseAppeals[j] = binaryReader.ReadSByte();
                         }
-                        infoEntry.EstateOwnerName = (infoEntry.InfoFlags & HousingFlags.PlotOwned) != 0
-                            ? Encoding.UTF8.GetString(binaryReader.ReadBytes(32)).TrimEnd(new char[1])
-                            : "";
+                        infoEntry.EstateOwnerName = Encoding.UTF8.GetString(binaryReader.ReadBytes(32)).TrimEnd(new char[1]);
                         wardInfo.HouseInfoEntries[i] = infoEntry;
+
+                        // if a house is unowned, the ownerName can be literally anything, so set it to empty string
+                        if ((infoEntry.InfoFlags & HousingFlags.PlotOwned) == 0)
+                            infoEntry.EstateOwnerName = "";
                     }
                 }
             }
