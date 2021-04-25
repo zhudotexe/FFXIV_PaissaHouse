@@ -25,7 +25,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>None</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -73,6 +74,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="DalamudPackager" Version="1.2.1" />
+    <PackageReference Include="jose-jwt" Version="3.1.1" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="Configuration.cs" />
     <Compile Include="Paissa\HousingState.cs" />
     <Compile Include="Paissa\PaissaClient.cs" />
@@ -88,9 +93,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -99,5 +101,11 @@
     <Error Condition="!Exists('packages\DalamudPackager.1.2.1\build\DalamudPackager.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\DalamudPackager.1.2.1\build\DalamudPackager.props'))" />
     <Error Condition="!Exists('packages\DalamudPackager.1.2.1\build\DalamudPackager.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\DalamudPackager.1.2.1\build\DalamudPackager.targets'))" />
   </Target>
-  <Import Project="packages\DalamudPackager.1.2.1\build\DalamudPackager.targets" Condition="Exists('packages\DalamudPackager.1.2.1\build\DalamudPackager.targets')" />
+  <Target Name="PackagePlugin" Condition="'$(Configuration)' == 'Release'">
+    <DalamudPackager
+            ProjectDir="$(ProjectDir)"
+            OutputPath="$(OutputPath)"
+            AssemblyName="$(AssemblyName)"
+            MakeZip="true"/>
+  </Target>
 </Project>
