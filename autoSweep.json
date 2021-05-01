@@ -1,7 +1,7 @@
 {
   "Author": "zhudotexe",
   "Name": "PaissaHouse",
-  "Description": "Makes note of open houses when viewing a housing ward from an aetheryte.",
+  "Description": "Looking for that perfect house? PaissaHouse lets you receive notifications when a new house is up for sale on your home world, and contribute to PaissaDB when viewing housing wards at a city aetheryte/ferry.",
   "RepoUrl": "https://github.com/zhudotexe/FFXIV_PaissaHouse",
   "ApplicableVersion": "any",
   "Tags": ["housing"],
