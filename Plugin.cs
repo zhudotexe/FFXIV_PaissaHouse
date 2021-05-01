@@ -54,6 +54,7 @@ namespace AutoSweep
             // paissa setup
             this.sweepState = new SweepState();
             this.paissaClient = new PaissaClient(this.pi);
+            this.paissaClient.OnPlotOpened += OnPlotOpened;
 
             PluginLog.LogDebug($"Initialization complete: configVersion={this.configuration.Version}");
         }
@@ -67,6 +68,7 @@ namespace AutoSweep
             this.pi.Dispose();
         }
 
+        // ==== dalamud events ====
         private void OnCommand(string command, string args)
         {
             switch (args) {
@@ -119,30 +121,30 @@ namespace AutoSweep
 
             // post wardinfo to PaissaDB
             paissaClient?.PostWardInfo(wardInfo);
-            
-            // iterate over houses to find open houses
-            // todo remove me and use a socket
-            for (int i = 0; i < wardInfo.HouseInfoEntries.Length; i++) {
-                HouseInfoEntry houseInfoEntry = wardInfo.HouseInfoEntries[i];
-                if ((houseInfoEntry.InfoFlags & HousingFlags.PlotOwned) == 0)
-                    this.OnFoundOpenHouse(wardInfo.LandIdent, houseInfoEntry.HousePrice, i);
-            }
 
             PluginLog.LogDebug($"Done processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber}");
         }
 
-        private void OnFoundOpenHouse(LandIdent landIdent, uint? price, int plotNumber)
+        // ==== paissa events ====
+        private void OnPlotOpened(object sender, PlotOpenedEventArgs e)
         {
-            var place = this.territories.GetRow((uint)landIdent.TerritoryTypeId).PlaceName.Value;
-            var districtName = place.NameNoArticle.RawString.Length > 0 ? place.NameNoArticle : place.Name; // languages like German do not use NameNoArticle (#2)
-            var worldName = this.worlds.GetRow((uint)landIdent.WorldId).Name;
+            if (!this.configuration.Enabled) return;
+            if (e.PlotDetail == null) return;
+            OnFoundOpenHouse(e.PlotDetail.world_id, e.PlotDetail.district_id, e.PlotDetail.ward_number, e.PlotDetail.plot_number, e.PlotDetail.known_price);
+        }
 
-            var landSet = housingLandSets.GetRow(TerritoryTypeIdToLandSetId(landIdent.TerritoryTypeId));
+        private void OnFoundOpenHouse(uint worldId, uint territoryTypeId, int wardNumber, int plotNumber, uint? price)
+        {
+            var place = this.territories.GetRow(territoryTypeId).PlaceName.Value;
+            var districtName = place.NameNoArticle.RawString.Length > 0 ? place.NameNoArticle : place.Name; // languages like German do not use NameNoArticle (#2)
+            var worldName = this.worlds.GetRow(worldId).Name;
+
+            var landSet = housingLandSets.GetRow(TerritoryTypeIdToLandSetId(territoryTypeId));
             var houseSize = landSet.PlotSize[plotNumber];
             var realPrice = price.GetValueOrDefault(landSet.InitialPrice[plotNumber]); // if price is null, it's probably the default price (landupdate)
 
             var districtNameNoSpaces = districtName.ToString().Replace(" ", "");
-            int wardNum = landIdent.WardNumber + 1;
+            int wardNum = wardNumber + 1;
             int plotNum = plotNumber + 1;
             float housePriceMillions = realPrice / 1000000f;
             string houseSizeName = houseSize == 0 ? "Small" : houseSize == 1 ? "Medium" : "Large";
@@ -166,7 +168,8 @@ namespace AutoSweep
             this.pi.Framework.Gui.Chat.Print(output);
         }
 
-        private uint TerritoryTypeIdToLandSetId(int territoryTypeId)
+        // ==== helpers ====
+        private uint TerritoryTypeIdToLandSetId(uint territoryTypeId)
         {
             switch (territoryTypeId) {
                 case 641: // shirogane
@@ -174,7 +177,7 @@ namespace AutoSweep
                 case 886: // firmament?
                     return 4;
                 default: // mist, lb, gob are 339-341
-                    return (uint)territoryTypeId - 339;
+                    return territoryTypeId - 339;
             }
         }
 

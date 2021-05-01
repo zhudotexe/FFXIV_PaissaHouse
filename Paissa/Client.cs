@@ -31,8 +31,9 @@ namespace AutoSweep.Paissa
 
         private readonly byte[] secret = Encoding.UTF8.GetBytes(Secrets.JwtSecret);
 
-        public event EventHandler<> OnPlotOpened;
-        public event EventHandler<> OnPlotSold;
+        public event EventHandler<PlotOpenedEventArgs> OnPlotOpened;
+
+        public event EventHandler<PlotSoldEventArgs> OnPlotSold;
 
         public PaissaClient(DalamudPluginInterface pi)
         {
@@ -95,7 +96,22 @@ namespace AutoSweep.Paissa
 
         private void OnWSMessage(object sender, MessageEventArgs e)
         {
+            if (!e.IsText) return;
             PluginLog.Verbose($">>>> R: {e.Data}");
+            var message = JsonConvert.DeserializeObject<WSMessage>(e.Data);
+            switch (message.Type) {
+                case "plot_open":
+                    OnPlotOpened?.Invoke(this, new PlotOpenedEventArgs(message.Data.ToObject<OpenPlotDetail>()));
+                    break;
+                case "plot_sold":
+                    OnPlotSold?.Invoke(this, new PlotSoldEventArgs(message.Data.ToObject<SoldPlotDetail>()));
+                    break;
+                case "ping":
+                    break;
+                default:
+                    PluginLog.Warning($"Got unknown WS message: {e.Data}");
+                    break;
+            }
         }
 
         private void OnWSClose(object sender, CloseEventArgs e)
@@ -108,13 +124,14 @@ namespace AutoSweep.Paissa
 
         private void OnWSError(object sender, ErrorEventArgs e)
         {
-            PluginLog.Warning($"WebSocket error: {e.Message}");
+            PluginLog.LogWarning(e.Exception, $"WebSocket error: {e.Message}");
             if (!disposed)
                 WSReconnectSoon();
         }
 
         private void WSReconnectSoon()
         {
+            if (ws.IsAlive) return;
             var t = new Random().Next(5_000, 15_000);
             PluginLog.Warning($"WebSocket closed unexpectedly: will reconnect to socket in {t / 1000f:F3} seconds");
             Task.Run(async () => await Task.Delay(t)).ContinueWith(_ => ws.ConnectAsync());

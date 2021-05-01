@@ -77,6 +77,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration.cs" />
+    <Compile Include="Paissa\Events.cs" />
+    <Compile Include="Paissa\Schema.cs" />
     <Compile Include="Paissa\SweepState.cs" />
     <Compile Include="Paissa\Client.cs" />
     <Compile Include="Paissa\Secrets.cs" />
