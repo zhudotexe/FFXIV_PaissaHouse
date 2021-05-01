@@ -4,7 +4,7 @@ using AutoSweep.Structures;
 
 namespace AutoSweep.Paissa
 {
-    public class HousingState
+    public class SweepState
     {
         private int lastSweptDistrictTerritoryTypeId;
         private int lastSweptDistrictWorldId;

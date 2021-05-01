@@ -26,7 +26,7 @@ namespace AutoSweep
         private ExcelSheet<HousingLandSet> housingLandSets;
 
         // state
-        private HousingState housingState;
+        private SweepState sweepState;
         private PaissaClient paissaClient;
 
         public void Initialize(DalamudPluginInterface pluginInterface)
@@ -52,7 +52,7 @@ namespace AutoSweep
             this.pi.UiBuilder.OnOpenConfigUi += (sender, args) => DrawConfigUI();
 
             // paissa setup
-            this.housingState = new HousingState();
+            this.sweepState = new SweepState();
             this.paissaClient = new PaissaClient(this.pi);
 
             PluginLog.LogDebug($"Initialization complete: configVersion={this.configuration.Version}");
@@ -71,7 +71,7 @@ namespace AutoSweep
         {
             switch (args) {
                 case "reset":
-                    housingState.Reset();
+                    sweepState.Reset();
                     break;
                 default:
                     this.ui.SettingsVisible = true;
@@ -96,9 +96,9 @@ namespace AutoSweep
 
             // if the current wardinfo is for a different district than the last swept one, print the header
             // or if the last sweep was > 10m ago
-            if (housingState.ShouldStartNewSweep(wardInfo)) {
+            if (sweepState.ShouldStartNewSweep(wardInfo)) {
                 // reset last sweep info to the current sweep
-                housingState.StartDistrictSweep(wardInfo);
+                sweepState.StartDistrictSweep(wardInfo);
 
                 var districtName = this.territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId).PlaceName.Value.Name;
                 var worldName = this.worlds.GetRow((uint)wardInfo.LandIdent.WorldId).Name;
@@ -106,15 +106,15 @@ namespace AutoSweep
             }
 
             // if we've seen this ward already, ignore it
-            if (housingState.LastSweptDistrictSeenWardNumbers.Contains(wardInfo.LandIdent.WardNumber)) {
+            if (sweepState.LastSweptDistrictSeenWardNumbers.Contains(wardInfo.LandIdent.WardNumber)) {
                 PluginLog.LogDebug($"Skipped processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber} because we have seen it already");
                 return;
             }
 
             // add the ward number to this sweep's seen numbers
-            housingState.LastSweptDistrictSeenWardNumbers.Add(wardInfo.LandIdent.WardNumber);
+            sweepState.LastSweptDistrictSeenWardNumbers.Add(wardInfo.LandIdent.WardNumber);
             // if that's all the wards, give the user a cookie
-            if (housingState.LastSweptDistrictSeenWardNumbers.Count == numWardsPerDistrict)
+            if (sweepState.LastSweptDistrictSeenWardNumbers.Count == numWardsPerDistrict)
                 this.pi.Framework.Gui.Chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you for your contribution!");
 
             // post wardinfo to PaissaDB

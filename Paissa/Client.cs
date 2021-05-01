@@ -31,6 +31,9 @@ namespace AutoSweep.Paissa
 
         private readonly byte[] secret = Encoding.UTF8.GetBytes(Secrets.JwtSecret);
 
+        public event EventHandler<> OnPlotOpened;
+        public event EventHandler<> OnPlotSold;
+
         public PaissaClient(DalamudPluginInterface pi)
         {
             http = new HttpClient();
