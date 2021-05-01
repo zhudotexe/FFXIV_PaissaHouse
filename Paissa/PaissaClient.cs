@@ -9,19 +9,24 @@ using Dalamud.Game.Internal;
 using Dalamud.Plugin;
 using Jose;
 using Newtonsoft.Json;
+using WebSocketSharp;
 
 namespace AutoSweep.Paissa
 {
     public class PaissaClient : IDisposable
     {
         private readonly HttpClient http;
+        private readonly WebSocket ws;
         private readonly DalamudPluginInterface pi;
         private bool needsHello = true;
+        private bool disposed = false;
 
 #if DEBUG
         private const string apiBase = "http://127.0.0.1:8000";
+        private const string wsRoute = "ws://127.0.0.1:8000/ws";
 #else
         private const string apiBase = "https://paissadb.zhu.codes";
+        private const string wsRoute = "wss://paissadb.zhu.codes/ws";
 #endif
 
         private readonly byte[] secret = Encoding.UTF8.GetBytes(Secrets.JwtSecret);
@@ -29,6 +34,12 @@ namespace AutoSweep.Paissa
         public PaissaClient(DalamudPluginInterface pi)
         {
             http = new HttpClient();
+            ws = new WebSocket(wsRoute);
+            ws.OnOpen += OnWSOpen;
+            ws.OnMessage += OnWSMessage;
+            ws.OnClose += OnWSClose;
+            ws.OnError += OnWSError;
+            ws.ConnectAsync();
             this.pi = pi;
             this.pi.ClientState.OnLogin += OnLogin;
             this.pi.Framework.OnUpdateEvent += OnUpdateEvent;
@@ -36,7 +47,9 @@ namespace AutoSweep.Paissa
 
         public void Dispose()
         {
+            disposed = true;
             http.Dispose();
+            ws.CloseAsync(1000);
             this.pi.ClientState.OnLogin -= OnLogin;
             this.pi.Framework.OnUpdateEvent -= OnUpdateEvent;
         }
@@ -71,7 +84,40 @@ namespace AutoSweep.Paissa
             await PostFireAndForget("/wardInfo", content);
         }
 
-        // ==== event listeners ====
+        // ==== WebSocket ====
+        private void OnWSOpen(object sender, EventArgs e)
+        {
+            PluginLog.Information("WebSocket connected");
+        }
+
+        private void OnWSMessage(object sender, MessageEventArgs e)
+        {
+            PluginLog.Verbose($">>>> R: {e.Data}");
+        }
+
+        private void OnWSClose(object sender, CloseEventArgs e)
+        {
+            PluginLog.Information($"WebSocket closed ({e.Code}: {e.Reason})");
+            // reconnect if unexpected close or server restarting
+            if ((!e.WasClean || e.Code == 1012) && !disposed)
+                WSReconnectSoon();
+        }
+
+        private void OnWSError(object sender, ErrorEventArgs e)
+        {
+            PluginLog.Warning($"WebSocket error: {e.Message}");
+            if (!disposed)
+                WSReconnectSoon();
+        }
+
+        private void WSReconnectSoon()
+        {
+            var t = new Random().Next(5_000, 15_000);
+            PluginLog.Warning($"WebSocket closed unexpectedly: will reconnect to socket in {t / 1000f:F3} seconds");
+            Task.Run(async () => await Task.Delay(t)).ContinueWith(_ => ws.ConnectAsync());
+        }
+
+        // ==== Dalamud listeners ====
         private void OnLogin(object _, EventArgs __)
         {
             needsHello = true;

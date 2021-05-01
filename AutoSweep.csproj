@@ -46,10 +46,6 @@
       <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\ImGuiScene.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="jose-jwt, Version=3.1.1.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>packages\jose-jwt.3.1.1\lib\net461\jose-jwt.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="Lumina">
       <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Lumina.dll</HintPath>
       <Private>False</Private>
@@ -75,7 +71,9 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="DalamudPackager" Version="1.2.1" />
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18.2" />
     <PackageReference Include="jose-jwt" Version="3.1.1" />
+    <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration.cs" />
@@ -101,11 +99,14 @@
     <Error Condition="!Exists('packages\DalamudPackager.1.2.1\build\DalamudPackager.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\DalamudPackager.1.2.1\build\DalamudPackager.props'))" />
     <Error Condition="!Exists('packages\DalamudPackager.1.2.1\build\DalamudPackager.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\DalamudPackager.1.2.1\build\DalamudPackager.targets'))" />
   </Target>
+  <Target Name="ILRepacker" AfterTargets="Build" BeforeTargets="PackagePlugin" Condition="'$(Configuration)' == 'Debug'">
+    <ItemGroup>
+      <InputAssemblies Include="$(OutputPath)\$(AssemblyName).dll" />
+      <InputAssemblies Include="$(OutputPath)\*.dll" Exclude="$(OutputPath)\$(AssemblyName).dll" />
+    </ItemGroup>
+    <ILRepack Parallel="true" Internalize="false" InputAssemblies="@(InputAssemblies)" TargetKind="Dll" OutputFile="$(OutputPath)\$(AssemblyName).dll" />
+  </Target>
   <Target Name="PackagePlugin" Condition="'$(Configuration)' == 'Release'">
-    <DalamudPackager
-            ProjectDir="$(ProjectDir)"
-            OutputPath="$(OutputPath)"
-            AssemblyName="$(AssemblyName)"
-            MakeZip="true"/>
+    <DalamudPackager ProjectDir="$(ProjectDir)" OutputPath="$(OutputPath)" AssemblyName="$(AssemblyName)" MakeZip="true" />
   </Target>
 </Project>
