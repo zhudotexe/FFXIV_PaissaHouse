@@ -22,7 +22,7 @@ namespace AutoSweep.Paissa
 
         public ushort plot_number { get; set; }
 
-        public char size { get; set; }
+        public ushort size { get; set; }
 
         public uint known_price { get; set; }
 

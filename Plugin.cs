@@ -130,6 +130,44 @@ namespace AutoSweep
         {
             if (!this.configuration.Enabled) return;
             if (e.PlotDetail == null) return;
+            if (e.PlotDetail.world_id != pi.ClientState.LocalPlayer?.HomeWorld.Id) return;
+            DistrictNotifConfig districtNotifs;
+            switch (e.PlotDetail.district_id) {
+                case 339:
+                    districtNotifs = configuration.Mist;
+                    break;
+                case 340:
+                    districtNotifs = configuration.LavenderBeds;
+                    break;
+                case 341:
+                    districtNotifs = configuration.Goblet;
+                    break;
+                case 641:
+                    districtNotifs = configuration.Shirogane;
+                    break;
+                case 886:
+                    districtNotifs = configuration.Firmament;
+                    break;
+                default:
+                    PluginLog.Warning($"Unknown district in plot open event: {e.PlotDetail.district_id}");
+                    return;
+            }
+            bool notifEnabled;
+            switch (e.PlotDetail.size) {
+                case 0:
+                    notifEnabled = districtNotifs.Small;
+                    break;
+                case 1:
+                    notifEnabled = districtNotifs.Medium;
+                    break;
+                case 2:
+                    notifEnabled = districtNotifs.Large;
+                    break;
+                default:
+                    PluginLog.Warning($"Unknown plot size in plot open event: {e.PlotDetail.size}");
+                    return;
+            }
+            if (!notifEnabled) return;
             OnFoundOpenHouse(e.PlotDetail.world_id, e.PlotDetail.district_id, e.PlotDetail.ward_number, e.PlotDetail.plot_number, e.PlotDetail.known_price);
         }
 
