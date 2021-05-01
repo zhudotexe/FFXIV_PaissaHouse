@@ -47,8 +47,6 @@ namespace AutoSweep.Paissa
 
         public char size { get; set; }
 
-        public uint known_price { get; set; }
-
         public DateTime last_updated_time { get; set; }
 
         public DateTime est_time_sold_min { get; set; }
