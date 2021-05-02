@@ -90,7 +90,7 @@ namespace AutoSweep
         public void DrawTabItemForDistrict(string districtName, DistrictNotifConfig notifConfig)
         {
             if (ImGui.BeginTabItem(districtName)) {
-                ImGui.Text($"This tab controls which houses to receive notifications for in {districtName}. It won't affect the output when sweeping the whole district.");
+                ImGui.Text($"This tab controls which houses to receive notifications for in {districtName}.\nIt won't affect the output when sweeping the whole district.");
                 var small = notifConfig.Small;
                 if (ImGui.Checkbox("Small", ref small)) {
                     notifConfig.Small = small;
