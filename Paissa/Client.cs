@@ -59,9 +59,9 @@ namespace AutoSweep.Paissa
         }
 
         // ==== HTTP ====
-        /**
-         * Fire and forget a POST request to register the current character's content ID.
-         */
+        /// <summary>
+        /// Fire and forget a POST request to register the current character's content ID.
+        /// </summary>
         public async void Hello()
         {
             var player = pi.ClientState.LocalPlayer;
@@ -79,13 +79,53 @@ namespace AutoSweep.Paissa
             await PostFireAndForget("/hello", content);
         }
 
-        /**
-         * Fire and forget a POST request for a HousingWardInfo.
-         */
+        /// <summary>
+        /// Fire and forget a POST request for a ward info.
+        /// </summary>
         public async void PostWardInfo(HousingWardInfo wardInfo)
         {
             var content = JsonConvert.SerializeObject(wardInfo);
             await PostFireAndForget("/wardInfo", content);
+        }
+
+        /// <summary>
+        /// Get the district detail for a given district on a given world.
+        /// </summary>
+        /// <param name="worldId">The ID of the world</param>
+        /// <param name="districtId">The ID of the district (339=Mist, 340=LB, 341=Gob, 641=Shiro)</param>
+        /// <returns>The DistrictDetail</returns>
+        public async Task<DistrictDetail> GetDistrictDetailAsync(short worldId, short districtId)
+        {
+            var response = await http.GetAsync($"{apiBase}/worlds/{worldId}/{districtId}");
+            PluginLog.Debug($"GET {apiBase}/worlds/{worldId}/{districtId} returned {response.StatusCode} ({response.ReasonPhrase})");
+            response.EnsureSuccessStatusCode();
+            var respText = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<DistrictDetail>(respText);
+        }
+
+        private async Task PostFireAndForget(string route, string content)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{apiBase}{route}")
+            {
+                Content = new StringContent(content, Encoding.UTF8, "application/json"),
+                Headers =
+                {
+                    Authorization = new AuthenticationHeaderValue("Bearer", GenerateJwt())
+                }
+            };
+            try {
+                var response = await http.SendAsync(request);
+                PluginLog.Debug($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase})");
+                if (!response.IsSuccessStatusCode) {
+                    var respText = await response.Content.ReadAsStringAsync();
+                    PluginLog.Warning($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase}):\n{respText}");
+                    pi.Framework.Gui.Chat.PrintError($"There was an error connecting to PaissaDB: {response.ReasonPhrase}");
+                }
+            }
+            catch (Exception e) {
+                PluginLog.Warning(e, $"{request.Method} {request.RequestUri} raised an error:");
+                pi.Framework.Gui.Chat.PrintError("There was an error connecting to PaissaDB.");
+            }
         }
 
         // ==== WebSocket ====
@@ -134,7 +174,10 @@ namespace AutoSweep.Paissa
             if (ws.IsAlive) return;
             var t = new Random().Next(5_000, 15_000);
             PluginLog.Warning($"WebSocket closed unexpectedly: will reconnect to socket in {t / 1000f:F3} seconds");
-            Task.Run(async () => await Task.Delay(t)).ContinueWith(_ => ws.ConnectAsync());
+            Task.Run(async () => await Task.Delay(t)).ContinueWith(_ =>
+            {
+                if (!disposed) ws.ConnectAsync();
+            });
         }
 
         // ==== Dalamud listeners ====
@@ -152,31 +195,6 @@ namespace AutoSweep.Paissa
         }
 
         // ==== helpers ====
-        private async Task PostFireAndForget(string route, string content)
-        {
-            var request = new HttpRequestMessage(HttpMethod.Post, $"{apiBase}{route}")
-            {
-                Content = new StringContent(content, Encoding.UTF8, "application/json"),
-                Headers =
-                {
-                    Authorization = new AuthenticationHeaderValue("Bearer", GenerateJwt())
-                }
-            };
-            try {
-                var response = await http.SendAsync(request);
-                PluginLog.Debug($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase})");
-                if (!response.IsSuccessStatusCode) {
-                    var respText = await response.Content.ReadAsStringAsync();
-                    PluginLog.Warning($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase}):\n{respText}");
-                    pi.Framework.Gui.Chat.PrintError($"There was an error connecting to PaissaDB: {response.ReasonPhrase}");
-                }
-            }
-            catch (Exception e) {
-                PluginLog.Warning(e, $"{request.Method} {request.RequestUri} raised an error:");
-                pi.Framework.Gui.Chat.PrintError("There was an error connecting to PaissaDB.");
-            }
-        }
-
         private string GenerateJwt()
         {
             var payload = new Dictionary<string, object>()

@@ -39,7 +39,7 @@ namespace AutoSweep.Paissa
         public ushort district_id { get; set; }
         public ushort ward_number { get; set; }
         public ushort plot_number { get; set; }
-        public char size { get; set; }
+        public ushort size { get; set; }
         public DateTime last_updated_time { get; set; }
         public DateTime est_time_sold_min { get; set; }
         public DateTime est_time_sold_max { get; set; }

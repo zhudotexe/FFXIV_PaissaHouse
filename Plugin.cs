@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 using AutoSweep.Paissa;
 using AutoSweep.Structures;
 using Dalamud.Game.Command;
@@ -115,17 +117,22 @@ namespace AutoSweep
 
             // add the ward number to this sweep's seen numbers
             sweepState.LastSweptDistrictSeenWardNumbers.Add(wardInfo.LandIdent.WardNumber);
-            // if that's all the wards, give the user a cookie
-            if (sweepState.LastSweptDistrictSeenWardNumbers.Count == numWardsPerDistrict)
-                this.pi.Framework.Gui.Chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you for your contribution!");
 
             // post wardinfo to PaissaDB
-            paissaClient?.PostWardInfo(wardInfo);
+            paissaClient.PostWardInfo(wardInfo);
+
+            // if that's all the wards, display the district summary and thanks
+            if (sweepState.LastSweptDistrictSeenWardNumbers.Count == numWardsPerDistrict) {
+                OnFinishedDistrictSweep(wardInfo);
+            }
 
             PluginLog.LogDebug($"Done processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber}");
         }
 
         // ==== paissa events ====
+        /// <summary>
+        /// Hook to call when a new plot open event is received over the websocket.
+        /// </summary>
         private void OnPlotOpened(object sender, PlotOpenedEventArgs e)
         {
             if (!this.configuration.Enabled) return;
@@ -171,6 +178,32 @@ namespace AutoSweep
             OnFoundOpenHouse(e.PlotDetail.world_id, e.PlotDetail.district_id, e.PlotDetail.ward_number, e.PlotDetail.plot_number, e.PlotDetail.known_price);
         }
 
+        /// <summary>
+        /// Called each time the user finishes sweeping a full district, with the wardinfo as the last ward swept. 
+        /// </summary>
+        private void OnFinishedDistrictSweep(HousingWardInfo wardInfo)
+        {
+            Task.Run(async () =>
+            {
+                DistrictDetail districtDetail;
+                try {
+                    districtDetail = await paissaClient.GetDistrictDetailAsync(wardInfo.LandIdent.WorldId, wardInfo.LandIdent.TerritoryTypeId);
+                }
+                catch (HttpRequestException) {
+                    pi.Framework.Gui.Chat.PrintError("There was an error connecting to PaissaDB.");
+                    return;
+                }
+                pi.Framework.Gui.Chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you for your contribution! Here's a summary of open plots in this district:");
+                pi.Framework.Gui.Chat.Print($"{districtDetail.name}: {districtDetail.num_open_plots} open plots.");
+                foreach (OpenPlotDetail plotDetail in districtDetail.open_plots) {
+                    OnFoundOpenHouse(plotDetail.world_id, plotDetail.district_id, plotDetail.ward_number, plotDetail.plot_number, plotDetail.known_price);
+                }
+            });
+        }
+
+        /// <summary>
+        /// Display the details of an open plot in the user's preferred format.
+        /// </summary>
         private void OnFoundOpenHouse(uint worldId, uint territoryTypeId, int wardNumber, int plotNumber, uint? price)
         {
             var place = this.territories.GetRow(territoryTypeId).PlaceName.Value;
