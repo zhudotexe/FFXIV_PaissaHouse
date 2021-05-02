@@ -183,6 +183,7 @@ namespace AutoSweep
         /// </summary>
         private void OnFinishedDistrictSweep(HousingWardInfo wardInfo)
         {
+            pi.Framework.Gui.Chat.Print($"Swept all {numWardsPerDistrict} wards, loading summary. Thank you for your contribution!");
             Task.Run(async () =>
             {
                 DistrictDetail districtDetail;
@@ -190,10 +191,10 @@ namespace AutoSweep
                     districtDetail = await paissaClient.GetDistrictDetailAsync(wardInfo.LandIdent.WorldId, wardInfo.LandIdent.TerritoryTypeId);
                 }
                 catch (HttpRequestException) {
-                    pi.Framework.Gui.Chat.PrintError("There was an error connecting to PaissaDB.");
+                    pi.Framework.Gui.Chat.PrintError("There was an error getting the district summary.");
                     return;
                 }
-                pi.Framework.Gui.Chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you for your contribution! Here's a summary of open plots in this district:");
+                pi.Framework.Gui.Chat.Print($"Here's a summary of open plots in {districtDetail.name}:");
                 pi.Framework.Gui.Chat.Print($"{districtDetail.name}: {districtDetail.num_open_plots} open plots.");
                 foreach (OpenPlotDetail plotDetail in districtDetail.open_plots) {
                     OnFoundOpenHouse(plotDetail.world_id, plotDetail.district_id, plotDetail.ward_number, plotDetail.plot_number, plotDetail.known_price);
@@ -233,7 +234,7 @@ namespace AutoSweep
                         plotNum.ToString(), realPrice.ToString(), housePriceMillions.ToString("F3"), houseSizeName);
                     break;
                 default:
-                    output = $"{districtName} {wardNum}-{plotNum} ({housePriceMillions:F3}m)";
+                    output = $"{districtName} {wardNum}-{plotNum} ({houseSizeName}, {housePriceMillions:F3}m)";
                     break;
             }
             this.pi.Framework.Gui.Chat.Print(output);
