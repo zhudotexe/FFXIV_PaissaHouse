@@ -4,44 +4,91 @@ using AutoSweep.Structures;
 
 namespace AutoSweep.Paissa
 {
+    public class OpenHouse
+    {
+        public OpenHouse(ushort wardNum, ushort plotNum, HouseInfoEntry houseInfoEntry)
+        {
+            WardNum = wardNum;
+            PlotNum = plotNum;
+            HouseInfoEntry = houseInfoEntry;
+        }
+
+        public ushort WardNum;
+        public ushort PlotNum;
+        public HouseInfoEntry HouseInfoEntry;
+    }
+
     public class SweepState
     {
-        private int lastSweptDistrictTerritoryTypeId;
-        private int lastSweptDistrictWorldId;
-        private DateTime lastSweepTime;
-        private HashSet<int> lastSweptDistrictSeenWardNumbers = new HashSet<int>();
+        private readonly int numWardsPerDistrict;
 
-        public HashSet<int> LastSweptDistrictSeenWardNumbers => lastSweptDistrictSeenWardNumbers;
+        public int DistrictId { get; private set; }
+        public int WorldId { get; private set; }
+        public DateTime SweepTime { get; private set; }
+        public HashSet<int> SeenWardNumbers { get; } = new HashSet<int>();
+        public List<OpenHouse> OpenHouses { get; } = new List<OpenHouse>();
+        public bool IsComplete => SeenWardNumbers.Count == numWardsPerDistrict;
 
-        /**
-         * Resets the state such that no wards have been seen.
-         */
-        public void Reset()
+        public SweepState(int numWardsPerDistrict)
         {
-            lastSweptDistrictWorldId = -1;
-            lastSweptDistrictTerritoryTypeId = -1;
-            lastSweptDistrictSeenWardNumbers.Clear();
+            this.numWardsPerDistrict = numWardsPerDistrict;
         }
 
-        /**
-         * Returns whether or not a received WardInfo should start a new sweep.
-         */
+        /// <summary>
+        /// Returns whether or not a received WardInfo should start a new sweep.
+        /// </summary>
         public bool ShouldStartNewSweep(HousingWardInfo wardInfo)
         {
-            return wardInfo.LandIdent.WorldId != lastSweptDistrictWorldId
-                   || wardInfo.LandIdent.TerritoryTypeId != lastSweptDistrictTerritoryTypeId
-                   || lastSweepTime < (DateTime.Now - TimeSpan.FromMinutes(10));
+            return wardInfo.LandIdent.WorldId != WorldId
+                   || wardInfo.LandIdent.TerritoryTypeId != DistrictId
+                   || SweepTime < (DateTime.Now - TimeSpan.FromMinutes(10));
         }
 
-        /**
-         * Sets the housing state to a sweep of the district of the given WardInfo.
-         */
+        /// <summary>
+        /// Sets the housing state to a sweep of the district of the given WardInfo.
+        /// </summary>
         public void StartDistrictSweep(HousingWardInfo wardInfo)
         {
-            lastSweptDistrictWorldId = wardInfo.LandIdent.WorldId;
-            lastSweptDistrictTerritoryTypeId = wardInfo.LandIdent.TerritoryTypeId;
-            lastSweptDistrictSeenWardNumbers.Clear();
-            lastSweepTime = DateTime.Now;
+            WorldId = wardInfo.LandIdent.WorldId;
+            DistrictId = wardInfo.LandIdent.TerritoryTypeId;
+            SeenWardNumbers.Clear();
+            OpenHouses.Clear();
+            SweepTime = DateTime.Now;
+        }
+
+        /// <summary>
+        /// Returns whether the ward represented by the given wardinfo has been seen in the current sweep.
+        /// </summary>
+        public bool Contains(HousingWardInfo wardInfo)
+        {
+            return SeenWardNumbers.Contains(wardInfo.LandIdent.WardNumber);
+        }
+
+        /// <summary>
+        /// Adds sweep information for the given wardinfo to the current sweep.
+        /// </summary>
+        public void Add(HousingWardInfo wardInfo)
+        {
+            if (Contains(wardInfo)) return;
+            SeenWardNumbers.Add(wardInfo.LandIdent.WardNumber);
+
+            // add open houses to the internal list
+            for (ushort i = 0; i < wardInfo.HouseInfoEntries.Length; i++) {
+                HouseInfoEntry houseInfoEntry = wardInfo.HouseInfoEntries[i];
+                if ((houseInfoEntry.InfoFlags & HousingFlags.PlotOwned) == 0)
+                    OpenHouses.Add(new OpenHouse((ushort)wardInfo.LandIdent.WardNumber, i, houseInfoEntry));
+            }
+        }
+
+        /// <summary>
+        /// Resets the state such that no wards have been seen.
+        /// </summary>
+        public void Reset()
+        {
+            WorldId = -1;
+            DistrictId = -1;
+            SeenWardNumbers.Clear();
+            OpenHouses.Clear();
         }
     }
 }

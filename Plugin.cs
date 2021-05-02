@@ -54,7 +54,7 @@ namespace AutoSweep
             this.pi.UiBuilder.OnOpenConfigUi += (sender, args) => DrawConfigUI();
 
             // paissa setup
-            this.sweepState = new SweepState();
+            this.sweepState = new SweepState(numWardsPerDistrict);
             this.paissaClient = new PaissaClient(this.pi);
             this.paissaClient.OnPlotOpened += OnPlotOpened;
 
@@ -110,19 +110,19 @@ namespace AutoSweep
             }
 
             // if we've seen this ward already, ignore it
-            if (sweepState.LastSweptDistrictSeenWardNumbers.Contains(wardInfo.LandIdent.WardNumber)) {
+            if (sweepState.Contains(wardInfo)) {
                 PluginLog.LogDebug($"Skipped processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber} because we have seen it already");
                 return;
             }
 
-            // add the ward number to this sweep's seen numbers
-            sweepState.LastSweptDistrictSeenWardNumbers.Add(wardInfo.LandIdent.WardNumber);
+            // add the ward to this sweep
+            sweepState.Add(wardInfo);
 
             // post wardinfo to PaissaDB
             paissaClient.PostWardInfo(wardInfo);
 
             // if that's all the wards, display the district summary and thanks
-            if (sweepState.LastSweptDistrictSeenWardNumbers.Count == numWardsPerDistrict) {
+            if (sweepState.IsComplete) {
                 OnFinishedDistrictSweep(wardInfo);
             }
 
@@ -183,23 +183,31 @@ namespace AutoSweep
         /// </summary>
         private void OnFinishedDistrictSweep(HousingWardInfo wardInfo)
         {
-            pi.Framework.Gui.Chat.Print($"Swept all {numWardsPerDistrict} wards, loading summary. Thank you for your contribution!");
-            Task.Run(async () =>
-            {
-                DistrictDetail districtDetail;
-                try {
-                    districtDetail = await paissaClient.GetDistrictDetailAsync(wardInfo.LandIdent.WorldId, wardInfo.LandIdent.TerritoryTypeId);
-                }
-                catch (HttpRequestException) {
-                    pi.Framework.Gui.Chat.PrintError("There was an error getting the district summary.");
-                    return;
-                }
-                pi.Framework.Gui.Chat.Print($"Here's a summary of open plots in {districtDetail.name}:");
-                pi.Framework.Gui.Chat.Print($"{districtDetail.name}: {districtDetail.num_open_plots} open plots.");
-                foreach (OpenPlotDetail plotDetail in districtDetail.open_plots) {
-                    OnFoundOpenHouse(plotDetail.world_id, plotDetail.district_id, plotDetail.ward_number, plotDetail.plot_number, plotDetail.known_price);
-                }
-            });
+            var districtName = territories.GetRow((uint)sweepState.DistrictId).PlaceName.Value.Name;
+
+            pi.Framework.Gui.Chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you for your contribution!");
+            pi.Framework.Gui.Chat.Print($"Here's a summary of open plots in {districtName}:");
+            pi.Framework.Gui.Chat.Print($"{districtName}: {sweepState.OpenHouses.Count} open plots.");
+            foreach (var openHouse in sweepState.OpenHouses) {
+                OnFoundOpenHouse((uint)sweepState.WorldId, (uint)sweepState.DistrictId, openHouse.WardNum, openHouse.PlotNum, openHouse.HouseInfoEntry.HousePrice);
+            }
+
+            // Task.Run(async () =>
+            // {
+            //     DistrictDetail districtDetail;
+            //     try {
+            //         districtDetail = await paissaClient.GetDistrictDetailAsync(wardInfo.LandIdent.WorldId, wardInfo.LandIdent.TerritoryTypeId);
+            //     }
+            //     catch (HttpRequestException) {
+            //         pi.Framework.Gui.Chat.PrintError("There was an error getting the district summary.");
+            //         return;
+            //     }
+            //     pi.Framework.Gui.Chat.Print($"Here's a summary of open plots in {districtDetail.name}:");
+            //     pi.Framework.Gui.Chat.Print($"{districtDetail.name}: {districtDetail.num_open_plots} open plots.");
+            //     foreach (OpenPlotDetail plotDetail in districtDetail.open_plots) {
+            //         OnFoundOpenHouse(plotDetail.world_id, plotDetail.district_id, plotDetail.ward_number, plotDetail.plot_number, plotDetail.known_price);
+            //     }
+            // });
         }
 
         /// <summary>
@@ -207,9 +215,9 @@ namespace AutoSweep
         /// </summary>
         private void OnFoundOpenHouse(uint worldId, uint territoryTypeId, int wardNumber, int plotNumber, uint? price)
         {
-            var place = this.territories.GetRow(territoryTypeId).PlaceName.Value;
+            var place = territories.GetRow(territoryTypeId).PlaceName.Value;
             var districtName = place.NameNoArticle.RawString.Length > 0 ? place.NameNoArticle : place.Name; // languages like German do not use NameNoArticle (#2)
-            var worldName = this.worlds.GetRow(worldId).Name;
+            var worldName = worlds.GetRow(worldId).Name;
 
             var landSet = housingLandSets.GetRow(TerritoryTypeIdToLandSetId(territoryTypeId));
             var houseSize = landSet.PlotSize[plotNumber];
