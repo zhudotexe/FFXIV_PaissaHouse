@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Net.Http;
-using System.Threading.Tasks;
 using AutoSweep.Paissa;
 using AutoSweep.Structures;
 using Dalamud.Game.Command;
@@ -175,7 +173,8 @@ namespace AutoSweep
                     return;
             }
             if (!notifEnabled) return;
-            OnFoundOpenHouse(e.PlotDetail.world_id, e.PlotDetail.district_id, e.PlotDetail.ward_number, e.PlotDetail.plot_number, e.PlotDetail.known_price);
+            OnFoundOpenHouse(e.PlotDetail.world_id, e.PlotDetail.district_id, e.PlotDetail.ward_number, e.PlotDetail.plot_number, e.PlotDetail.known_price,
+                "New plot up for sale: ");
         }
 
         /// <summary>
@@ -213,7 +212,7 @@ namespace AutoSweep
         /// <summary>
         /// Display the details of an open plot in the user's preferred format.
         /// </summary>
-        private void OnFoundOpenHouse(uint worldId, uint territoryTypeId, int wardNumber, int plotNumber, uint? price)
+        private void OnFoundOpenHouse(uint worldId, uint territoryTypeId, int wardNumber, int plotNumber, uint? price, string messagePrefix = "")
         {
             var place = territories.GetRow(territoryTypeId).PlaceName.Value;
             var districtName = place.NameNoArticle.RawString.Length > 0 ? place.NameNoArticle : place.Name; // languages like German do not use NameNoArticle (#2)
@@ -232,17 +231,18 @@ namespace AutoSweep
             string output;
             switch (configuration.OutputFormat) {
                 case OutputFormat.Pings:
-                    output = $"@{houseSizeName}{districtNameNoSpaces} {wardNum}-{plotNum} ({housePriceMillions:F3}m)";
+                    output = $"{messagePrefix}@{houseSizeName}{districtNameNoSpaces} {wardNum}-{plotNum} ({housePriceMillions:F3}m)";
                     break;
                 case OutputFormat.EnoBot:
-                    output = $"##forsale {districtNameNoSpaces} w{wardNum} p{plotNum}";
+                    output = $"{messagePrefix}##forsale {districtNameNoSpaces} w{wardNum} p{plotNum}";
                     break;
                 case OutputFormat.Custom:
-                    output = FormatCustomOutputString(this.configuration.OutputFormatString, districtName.ToString(), districtNameNoSpaces, worldName, wardNum.ToString(),
+                    var template = $"{messagePrefix}{configuration.OutputFormatString}";
+                    output = FormatCustomOutputString(template, districtName.ToString(), districtNameNoSpaces, worldName, wardNum.ToString(),
                         plotNum.ToString(), realPrice.ToString(), housePriceMillions.ToString("F3"), houseSizeName);
                     break;
                 default:
-                    output = $"{districtName} {wardNum}-{plotNum} ({houseSizeName}, {housePriceMillions:F3}m)";
+                    output = $"{messagePrefix}{districtName} {wardNum}-{plotNum} ({houseSizeName}, {housePriceMillions:F3}m)";
                     break;
             }
             this.pi.Framework.Gui.Chat.Print(output);
