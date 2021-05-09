@@ -17,7 +17,11 @@ namespace AutoSweep
         public DistrictNotifConfig LavenderBeds { get; set; } = new DistrictNotifConfig();
         public DistrictNotifConfig Goblet { get; set; } = new DistrictNotifConfig();
         public DistrictNotifConfig Shirogane { get; set; } = new DistrictNotifConfig();
-        public DistrictNotifConfig Firmament { get; set; } = new DistrictNotifConfig();  // futureproofing :)
+        public DistrictNotifConfig Firmament { get; set; } = new DistrictNotifConfig(); // futureproofing :)
+
+        public bool HomeworldNotifs { get; set; } = true; // receive alerts for plots on your homeworld
+        public bool DatacenterNotifs { get; set; } = false; // receive alerts for plots on all worlds on your data center
+        public bool AllNotifs { get; set; } = false; // receive alerts for all worlds
 
         // the below exist just to make saving less cumbersome
         [NonSerialized]
@@ -33,7 +37,7 @@ namespace AutoSweep
             this.pluginInterface.SavePluginConfig(this);
         }
     }
-    
+
     [Serializable]
     public class DistrictNotifConfig
     {
@@ -58,7 +62,7 @@ namespace AutoSweep
         // ##forsale shirogane w5 p25
         // ...
         EnoBot = 3,
-        
+
         Custom = 4,
     }
 }

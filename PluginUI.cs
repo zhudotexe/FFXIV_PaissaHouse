@@ -67,6 +67,33 @@ namespace AutoSweep
                                 this.configuration.OutputFormatString = customOutputFormat;
                             }
                         }
+                        
+                        // homeworld alerts
+                        var homeworldNotifs = this.configuration.HomeworldNotifs;
+                        if (ImGui.Checkbox("Notifications: Homeworld", ref homeworldNotifs)) {
+                            this.configuration.HomeworldNotifs = homeworldNotifs;
+                        }
+                        if (ImGui.IsItemHovered()) {
+                            ImGui.SetTooltip("Whether or not to receive notifications about new plots for sale on your homeworld.");
+                        }
+                        
+                        // datacenter alerts
+                        var datacenterNotifs = this.configuration.DatacenterNotifs;
+                        if (ImGui.Checkbox("Notifications: Datacenter", ref datacenterNotifs)) {
+                            this.configuration.DatacenterNotifs = datacenterNotifs;
+                        }
+                        if (ImGui.IsItemHovered()) {
+                            ImGui.SetTooltip("Whether or not to receive notifications about all new plots for sale on your home data center.");
+                        }
+                        
+                        // all world alerts
+                        var allNotifs = this.configuration.AllNotifs;
+                        if (ImGui.Checkbox("Notifications: All", ref allNotifs)) {
+                            this.configuration.AllNotifs = allNotifs;
+                        }
+                        if (ImGui.IsItemHovered()) {
+                            ImGui.SetTooltip("Whether or not to receive notifications about all new plots for sale, regardless of world or data center.");
+                        }
                         ImGui.EndTabItem();
                     }
                     DrawTabItemForDistrict("Mist", configuration.Mist);

@@ -135,7 +135,13 @@ namespace AutoSweep
         {
             if (!this.configuration.Enabled) return;
             if (e.PlotDetail == null) return;
-            if (e.PlotDetail.world_id != pi.ClientState.LocalPlayer?.HomeWorld.Id) return;
+            // does the config want notifs for this world?
+            var eventWorld = worlds.GetRow(e.PlotDetail.world_id);
+            if (!(configuration.AllNotifs
+                  || (configuration.HomeworldNotifs && e.PlotDetail.world_id == pi.ClientState.LocalPlayer?.HomeWorld.Id)
+                  || (configuration.DatacenterNotifs && eventWorld.DataCenter.Value.Region == pi.ClientState.LocalPlayer?.HomeWorld.GameData.DataCenter.Value.Region)))
+                return;
+            // what about house sizes in this district?
             DistrictNotifConfig districtNotifs;
             switch (e.PlotDetail.district_id) {
                 case 339:
@@ -172,9 +178,10 @@ namespace AutoSweep
                     PluginLog.Warning($"Unknown plot size in plot open event: {e.PlotDetail.size}");
                     return;
             }
+            // do the notification
             if (!notifEnabled) return;
             OnFoundOpenHouse(e.PlotDetail.world_id, e.PlotDetail.district_id, e.PlotDetail.ward_number, e.PlotDetail.plot_number, e.PlotDetail.known_price,
-                "New plot up for sale: ");
+                $"New plot up for sale on {eventWorld.Name}: ");
         }
 
         /// <summary>
