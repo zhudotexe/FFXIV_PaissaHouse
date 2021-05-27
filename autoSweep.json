@@ -1,7 +1,7 @@
 {
   "Author": "zhudotexe",
   "Name": "PaissaHouse",
-  "Description": "Looking for that perfect house? PaissaHouse lets you receive notifications when a new house is up for sale on your home world, and contribute to PaissaDB when viewing housing wards at a city aetheryte/ferry.",
+  "Description": "Looking for that perfect house? PaissaHouse lets you receive notifications when a new plot of land is up for sale on your home world.\n\nWant to contribute? Check out the repository (globe icon below) for instructions.",
   "RepoUrl": "https://github.com/zhudotexe/FFXIV_PaissaHouse",
   "ApplicableVersion": "any",
   "Tags": ["housing"],

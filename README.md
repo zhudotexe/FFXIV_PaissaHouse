@@ -1,5 +1,5 @@
 # PaissaHouse
-Looking for that perfect house? PaissaHouse lets you receive notifications when a new house is up for sale on your home world, and contribute to PaissaDB when viewing housing wards at a city aetheryte/ferry.
+Looking for that perfect house? PaissaHouse lets you receive notifications when a new plot of land is up for sale on your home world, and contribute to PaissaDB when viewing housing wards at a city aetheryte/ferry.
 
 ## Usage
 Simply install and it will happily run in the background, notifying you when a new plot of land is up for sale on your home world.
