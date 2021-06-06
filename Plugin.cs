@@ -138,8 +138,8 @@ namespace AutoSweep
             // does the config want notifs for this world?
             var eventWorld = worlds.GetRow(e.PlotDetail.world_id);
             if (!(configuration.AllNotifs
-                  || (configuration.HomeworldNotifs && e.PlotDetail.world_id == pi.ClientState.LocalPlayer?.HomeWorld.Id)
-                  || (configuration.DatacenterNotifs && eventWorld.DataCenter.Value.Region == pi.ClientState.LocalPlayer?.HomeWorld.GameData.DataCenter.Value.Region)))
+                  || (configuration.HomeworldNotifs && (e.PlotDetail.world_id == pi.ClientState.LocalPlayer?.HomeWorld.Id))
+                  || (configuration.DatacenterNotifs && (eventWorld.DataCenter.Row == pi.ClientState.LocalPlayer?.HomeWorld.GameData.DataCenter.Row))))
                 return;
             // what about house sizes in this district?
             DistrictNotifConfig districtNotifs;
