@@ -38,7 +38,7 @@ namespace AutoSweep.Paissa
         public PaissaClient(DalamudPluginInterface pi)
         {
             http = new HttpClient();
-            ws = new WebSocket(wsRoute);
+            ws = new WebSocket(GetWSRouteWithAuth());
             ws.OnOpen += OnWSOpen;
             ws.OnMessage += OnWSMessage;
             ws.OnClose += OnWSClose;
@@ -205,6 +205,11 @@ namespace AutoSweep.Paissa
                 {"iat", DateTimeOffset.Now.ToUnixTimeSeconds()}
             };
             return JWT.Encode(payload, secret, JwsAlgorithm.HS256);
+        }
+
+        private string GetWSRouteWithAuth()
+        {
+            return $"{wsRoute}?jwt={GenerateJwt()}";
         }
     }
 }
