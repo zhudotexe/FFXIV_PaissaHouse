@@ -94,6 +94,15 @@ namespace AutoSweep
                         if (ImGui.IsItemHovered()) {
                             ImGui.SetTooltip("Whether or not to receive notifications about all new plots for sale, regardless of world or data center.");
                         }
+                        
+                        // data contrib alerts
+                        var dataContribNotifs = this.configuration.DataContribNotifs;
+                        if (ImGui.Checkbox("Notifications: Data Contribution", ref dataContribNotifs)) {
+                            this.configuration.DataContribNotifs = dataContribNotifs;
+                        }
+                        if (ImGui.IsItemHovered()) {
+                            ImGui.SetTooltip("Whether or not to receive a reminder to help contribute housing data when loading in to a city with stale data.");
+                        }
                         ImGui.EndTabItem();
                     }
                     DrawTabItemForDistrict("Mist", configuration.Mist);
