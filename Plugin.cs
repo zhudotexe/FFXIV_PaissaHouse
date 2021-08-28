@@ -240,9 +240,6 @@ namespace AutoSweep
                 case OutputFormat.Pings:
                     output = $"{messagePrefix}@{houseSizeName}{districtNameNoSpaces} {wardNum}-{plotNum} ({housePriceMillions:F3}m)";
                     break;
-                case OutputFormat.EnoBot:
-                    output = $"{messagePrefix}##forsale {districtNameNoSpaces} w{wardNum} p{plotNum}";
-                    break;
                 case OutputFormat.Custom:
                     var template = $"{messagePrefix}{configuration.OutputFormatString}";
                     output = FormatCustomOutputString(template, districtName.ToString(), districtNameNoSpaces, worldName, wardNum.ToString(),

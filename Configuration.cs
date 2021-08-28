@@ -61,7 +61,7 @@ namespace AutoSweep
         // Sweep for Shirogane (Diabolos)
         // ##forsale shirogane w5 p25
         // ...
-        EnoBot = 3,
+        // EnoBot = 3,  // option removed since project abandoned
 
         Custom = 4,
     }
