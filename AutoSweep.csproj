@@ -1,37 +1,16 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="packages\DalamudPackager.1.2.1\build\DalamudPackager.props" Condition="Exists('packages\DalamudPackager.1.2.1\build\DalamudPackager.props')" />
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{13C812E9-0D42-4B95-8646-40EEBF30636F}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>AutoSweep</RootNamespace>
-    <AssemblyName>autoSweep</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <Deterministic>true</Deterministic>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>x64;AnyCPU</Platforms>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugSymbols>false</DebugSymbols>
     <DebugType>None</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Dalamud">
@@ -58,56 +37,27 @@
       <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Web.Extensions" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="1.2.1" />
-    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18.2" />
-    <PackageReference Include="jose-jwt" Version="3.1.1" />
+    <PackageReference Include="DalamudPackager" Version="2.1.2" />
+    <PackageReference Include="jose-jwt" Version="3.2.0" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.11.0" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
     <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Configuration.cs" />
-    <Compile Include="Paissa\Events.cs" />
-    <Compile Include="Paissa\Schema.cs" />
-    <Compile Include="Paissa\SweepState.cs" />
-    <Compile Include="Paissa\Client.cs" />
-    <Compile Include="Paissa\Secrets.cs" />
-    <Compile Include="Plugin.cs" />
-    <Compile Include="PluginUI.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Structures\HousingWardInfo.cs" />
-    <Compile Include="Structures\HousingCommon.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="autoSweep.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105.The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('packages\DalamudPackager.1.2.1\build\DalamudPackager.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\DalamudPackager.1.2.1\build\DalamudPackager.props'))" />
-    <Error Condition="!Exists('packages\DalamudPackager.1.2.1\build\DalamudPackager.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\DalamudPackager.1.2.1\build\DalamudPackager.targets'))" />
-  </Target>
-  <Target Name="ILRepacker" AfterTargets="Build" BeforeTargets="PackagePlugin" Condition="'$(Configuration)' == 'Debug'">
-    <ItemGroup>
-      <InputAssemblies Include="$(OutputPath)\$(AssemblyName).dll" />
-      <InputAssemblies Include="$(OutputPath)\*.dll" Exclude="$(OutputPath)\$(AssemblyName).dll" />
-    </ItemGroup>
-    <ILRepack Parallel="true" Internalize="false" InputAssemblies="@(InputAssemblies)" TargetKind="Dll" OutputFile="$(OutputPath)\$(AssemblyName).dll" />
-  </Target>
+<!--  <Target Name="ILRepacker" AfterTargets="Build" BeforeTargets="PackagePlugin" Condition="'$(Configuration)' == 'Debug'">-->
+<!--    <ItemGroup>-->
+<!--      <InputAssemblies Include="$(OutputPath)\$(AssemblyName).dll" />-->
+<!--      <InputAssemblies Include="$(OutputPath)\*.dll" Exclude="$(OutputPath)\$(AssemblyName).dll" />-->
+<!--    </ItemGroup>-->
+<!--    <ILRepack Parallel="true" Internalize="false" InputAssemblies="@(InputAssemblies)" TargetKind="Dll" OutputFile="$(OutputPath)\$(AssemblyName).dll" />-->
+<!--  </Target>-->
   <Target Name="PackagePlugin" Condition="'$(Configuration)' == 'Release'">
     <DalamudPackager ProjectDir="$(ProjectDir)" OutputPath="$(OutputPath)" AssemblyName="$(AssemblyName)" MakeZip="true" />
   </Target>
