@@ -38,15 +38,15 @@ namespace AutoSweep.Paissa
         public PaissaClient(DalamudPluginInterface pi)
         {
             http = new HttpClient();
+            this.pi = pi;
+            this.pi.ClientState.OnLogin += OnLogin;
+            this.pi.Framework.OnUpdateEvent += OnUpdateEvent;
             ws = new WebSocket(GetWSRouteWithAuth());
             ws.OnOpen += OnWSOpen;
             ws.OnMessage += OnWSMessage;
             ws.OnClose += OnWSClose;
             ws.OnError += OnWSError;
             ws.ConnectAsync();
-            this.pi = pi;
-            this.pi.ClientState.OnLogin += OnLogin;
-            this.pi.Framework.OnUpdateEvent += OnUpdateEvent;
         }
 
         public void Dispose()
