@@ -2,12 +2,15 @@
   <PropertyGroup>
     <TargetFramework>net5.0-windows</TargetFramework>
     <PlatformTarget>x64</PlatformTarget>
-    <Platforms>x64;AnyCPU</Platforms>
+    <Platforms>AnyCPU</Platforms>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <IsPackable>false</IsPackable>
+    <NoWarn>CA1416</NoWarn>
+    <Configurations>Debug;Release</Configurations>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>None</DebugType>
@@ -41,24 +44,14 @@
   <ItemGroup>
     <PackageReference Include="DalamudPackager" Version="2.1.2" />
     <PackageReference Include="jose-jwt" Version="3.2.0" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.11.0" />
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
-    <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11" />
+    <PackageReference Include="WebSocketSharp.Standard" Version="1.0.3" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="autoSweep.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="images\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
-<!--  <Target Name="ILRepacker" AfterTargets="Build" BeforeTargets="PackagePlugin" Condition="'$(Configuration)' == 'Debug'">-->
-<!--    <ItemGroup>-->
-<!--      <InputAssemblies Include="$(OutputPath)\$(AssemblyName).dll" />-->
-<!--      <InputAssemblies Include="$(OutputPath)\*.dll" Exclude="$(OutputPath)\$(AssemblyName).dll" />-->
-<!--    </ItemGroup>-->
-<!--    <ILRepack Parallel="true" Internalize="false" InputAssemblies="@(InputAssemblies)" TargetKind="Dll" OutputFile="$(OutputPath)\$(AssemblyName).dll" />-->
-<!--  </Target>-->
-  <Target Name="PackagePlugin" Condition="'$(Configuration)' == 'Release'">
-    <DalamudPackager ProjectDir="$(ProjectDir)" OutputPath="$(OutputPath)" AssemblyName="$(AssemblyName)" MakeZip="true" />
-  </Target>
 </Project>
