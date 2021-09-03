@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Text;
 using AutoSweep.Paissa;
 using AutoSweep.Structures;
 using Dalamud.Game.Command;
 using Dalamud.Game.Internal.Network;
+using Dalamud.Game.Text;
 using Dalamud.Plugin;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
+using Lumina.Text;
 
 namespace AutoSweep
 {
@@ -48,6 +51,7 @@ namespace AutoSweep
 
             // event hooks
             this.pi.Framework.Network.OnNetworkMessage += OnNetworkEvent;
+            this.pi.ClientState.TerritoryChanged += OnTerritoryChange;
             this.pi.UiBuilder.OnBuildUi += DrawUI;
             this.pi.UiBuilder.OnOpenConfigUi += (sender, args) => DrawConfigUI();
 
@@ -63,6 +67,7 @@ namespace AutoSweep
         {
             this.ui.Dispose();
             this.pi.Framework.Network.OnNetworkMessage -= OnNetworkEvent;
+            this.pi.ClientState.TerritoryChanged -= OnTerritoryChange;
             this.pi.CommandManager.RemoveHandler(commandName);
             this.paissaClient?.Dispose();
             this.pi.Dispose();
@@ -74,11 +79,28 @@ namespace AutoSweep
             switch (args) {
                 case "reset":
                     sweepState.Reset();
+                    this.pi.Framework.Gui.Chat.Print("Reset sweep state.");
+                    // this.pi.Framework.Gui.Chat.PrintChat(new XivChatEntry()
+                    // {
+                    //     Name = "[PaissaHouse]",
+                    //     MessageBytes = Encoding.UTF8.GetBytes("hewwo"),
+                    //     Type = XivChatType.TellIncoming
+                    // });
                     break;
                 default:
                     this.ui.SettingsVisible = true;
                     break;
             }
+        }
+
+        private void OnTerritoryChange(object sender, ushort territoryId)
+        {
+            var territoryName = territories.GetRow(territoryId).PlaceName.Value.Name;
+            PluginLog.LogDebug($"I am now at {territoryId} which is {territoryName}");
+            // if territory is a city for a given housing district
+            // and the data is more than 2 hours old
+            // and we haven't given a notification for this territory in the last hour
+            // send data contrib instructions
         }
 
         private void OnNetworkEvent(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction)
