@@ -1,57 +1,108 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net5.0-windows</TargetFramework>
-    <PlatformTarget>x64</PlatformTarget>
-    <Platforms>AnyCPU</Platforms>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
-    <IsPackable>false</IsPackable>
-    <NoWarn>CA1416</NoWarn>
-    <Configurations>Debug;Release</Configurations>
-    <AssemblyVersion>1.0.1.0</AssemblyVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>None</DebugType>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="Dalamud">
-      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Dalamud.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="ImGui.NET">
-      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\ImGui.NET.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="ImGuiScene">
-      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\ImGuiScene.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Lumina">
-      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Lumina.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Lumina.Excel">
-      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Lumina.Excel.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Newtonsoft.Json.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="2.1.2" />
-    <PackageReference Include="jose-jwt" Version="3.2.0" />
-    <PackageReference Include="WebSocketSharp.Standard" Version="1.0.3" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="autoSweep.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="images\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+
+    <PropertyGroup>
+        <Title>AutoSweep</Title>
+        <Authors>zhudotexe</Authors>
+        <TargetFramework>net5.0-windows7.0</TargetFramework>
+        <Platforms>x64</Platforms>
+        <LangVersion>9</LangVersion>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Deterministic>true</Deterministic>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+        <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <OutputPath>bin\$(Configuration)\</OutputPath>
+        <DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>full</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>bin\Debug\</OutputPath>
+        <DefineConstants>DEBUG;TRACE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+        <DebugType>pdbonly</DebugType>
+        <Optimize>true</Optimize>
+        <OutputPath>bin\Release\</OutputPath>
+        <DefineConstants>TRACE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Reference Include="Dalamud">
+            <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Dalamud.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="ImGui.NET">
+            <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\ImGui.NET.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="ImGuiScene">
+            <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\ImGuiScene.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Lumina">
+            <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Lumina.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Lumina.Excel">
+            <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Lumina.Excel.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Newtonsoft.Json">
+            <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Newtonsoft.Json.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="DalamudPackager" Version="2.1.2" />
+        <PackageReference Include="ILRepack" Version="2.0.18" />
+        <PackageReference Include="jose-jwt" Version="3.2.0" />
+        <PackageReference Include="WebSocketSharp.Standard" Version="1.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="autoSweep.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="images\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+
+    <Target Name="PostBuild" AfterTargets="Build">
+        <ItemGroup>
+            <InputAssemblies Include="$(TargetPath)" />
+            <InputAssemblies Include="$(TargetDir)*.dll" Exclude="$(TargetPath)" />
+        </ItemGroup>
+        <Exec Command="$(PkgILRepack)\tools\ILRepack.exe /union /lib:$(DalamudLibPath) /out:$(TargetDir)$(TargetFileName) @(InputAssemblies, ' ')" />
+        <MakeDir Directories="$(TargetDir)out\" />
+        <Exec Command="copy $(TargetDir)$(TargetFileName) $(TargetDir)out\$(TargetFileName)" />
+    </Target>
+
+    <Target Name="PostBuild_Debug" AfterTargets="PostBuild" Condition="'$(Configuration)' == 'Debug'">
+        <Exec Command="if not exist $(AppData)\XIVLauncher\devPlugins\$(TargetName) (mkdir $(AppData)\XIVLauncher\devPlugins\$(TargetName))" />
+        <Exec Command="copy $(TargetDir)out\$(TargetFileName) $(AppData)\XIVLauncher\devPlugins\$(TargetName)\$(TargetFileName)" />
+        <Exec Command="copy $(TargetDir)*.pdb $(AppData)\XIVLauncher\devPlugins\$(TargetName)" />
+    </Target>
+
+    <!--  <Target Name="PostBuild_Release" AfterTargets="PostBuild" Condition=" '$(Configuration)' == 'Release' ">-->
+    <!--    <ItemGroup>-->
+    <!--      <DeleteFiles Include="$(TargetDir)out\*.dll" Exclude="$(TargetDir)out\$(TargetFileName)" />-->
+    <!--    </ItemGroup>-->
+    <!--    <Delete Files="@(DeleteFiles)" />-->
+    <!--    <DalamudPackager ProjectDir="$(ProjectDir)" OutputPath="$(OutputPath)out\" AssemblyName="$(AssemblyName)" VersionComponents="4" MakeZip="true"/>-->
+    <!--    <MakeDir Directories="$(TargetDir)out\$(AssemblyName)\images" />-->
+    <!--    <Exec Command="copy $(ProjectDir)..\..\assets\*.png $(TargetDir)out\$(AssemblyName)\images\*.png" />-->
+    <!--  </Target>-->
+
 </Project>
