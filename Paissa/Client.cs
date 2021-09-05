@@ -9,7 +9,6 @@ using Dalamud.Game.ClientState;
 using Dalamud.Game.Gui;
 using Dalamud.IoC;
 using Dalamud.Logging;
-using Dalamud.Plugin;
 using JWT;
 using JWT.Algorithms;
 using JWT.Serializers;
@@ -58,7 +57,7 @@ namespace AutoSweep.Paissa
         {
             disposed = true;
             http.Dispose();
-            Task.Run(() => ws.Close(1000));
+            Task.Run(() => ws?.Close(1000));
         }
 
         // ==== HTTP ====
@@ -73,7 +72,7 @@ namespace AutoSweep.Paissa
             var charInfo = new Dictionary<string, object>()
             {
                 { "cid", ClientState.LocalContentId },
-                { "name", player.Name },
+                { "name", player.Name.ToString() },
                 { "world", player.HomeWorld.GameData.Name.ToString() },
                 { "worldId", player.HomeWorld.Id }
             };

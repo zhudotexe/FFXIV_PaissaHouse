@@ -95,7 +95,7 @@ namespace AutoSweep
                     break;
             }
         }
-        
+
         private void OnLogin(object _, EventArgs __)
         {
             clientNeedsHello = true;
@@ -103,9 +103,9 @@ namespace AutoSweep
 
         private void OnUpdateEvent(Framework framework)
         {
-            if (clientNeedsHello && ClientState.LocalPlayer != null) {
+            if (clientNeedsHello && ClientState?.LocalPlayer != null && paissaClient != null) {
                 clientNeedsHello = false;
-                paissaClient?.Hello();
+                paissaClient.Hello();
             }
         }
 
