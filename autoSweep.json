@@ -8,6 +8,5 @@
   "ImageUrls": [],
   "Punchline": "Chat alerts for player housing.",
   "Changelog": "Updated to API v4",
-  "DalamudApiLevel": 4,
-  "AssemblyVersion": "1.0.1.0"
+  "DalamudApiLevel": 4
 }

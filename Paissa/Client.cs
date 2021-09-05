@@ -5,12 +5,14 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using AutoSweep.Structures;
-using Dalamud.Game;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.Gui;
 using Dalamud.IoC;
 using Dalamud.Logging;
-using Jose;
+using Dalamud.Plugin;
+using JWT;
+using JWT.Algorithms;
+using JWT.Serializers;
 using Newtonsoft.Json;
 using WebSocketSharp;
 
@@ -20,13 +22,12 @@ namespace AutoSweep.Paissa
     {
         private readonly HttpClient http;
         private readonly WebSocket ws;
-        private bool needsHello = true;
+        private readonly JwtEncoder encoder = new JwtEncoder(new HMACSHA256Algorithm(), new JsonNetSerializer(), new JwtBase64UrlEncoder());
         private bool disposed = false;
 
         // dalamud
-        [PluginService] private static ChatGui Chat { get; set; }
         [PluginService] private static ClientState ClientState { get; set; }
-        [PluginService] private static Framework Framework { get; set; }
+        [PluginService] private static ChatGui Chat { get; set; }
 
 #if DEBUG
         private const string apiBase = "http://127.0.0.1:8000";
@@ -50,18 +51,14 @@ namespace AutoSweep.Paissa
             ws.OnMessage += OnWSMessage;
             ws.OnClose += OnWSClose;
             ws.OnError += OnWSError;
-            ws.ConnectAsync();
-            ClientState.Login += OnLogin;
-            Framework.Update += OnUpdateEvent;
+            Task.Run(() => ws.Connect());
         }
 
         public void Dispose()
         {
             disposed = true;
             http.Dispose();
-            ws.CloseAsync(1000);
-            ClientState.Login -= OnLogin;
-            Framework.Update -= OnUpdateEvent;
+            Task.Run(() => ws.Close(1000));
         }
 
         // ==== HTTP ====
@@ -182,23 +179,10 @@ namespace AutoSweep.Paissa
             PluginLog.Warning($"WebSocket closed unexpectedly: will reconnect to socket in {t / 1000f:F3} seconds");
             Task.Run(async () => await Task.Delay(t)).ContinueWith(_ =>
             {
-                if (!disposed) ws.ConnectAsync();
+                if (!disposed) ws.Connect();
             });
         }
 
-        // ==== Dalamud listeners ====
-        private void OnLogin(object _, EventArgs __)
-        {
-            needsHello = true;
-        }
-
-        private void OnUpdateEvent(Framework framework)
-        {
-            if (needsHello && ClientState.LocalPlayer != null) {
-                needsHello = false;
-                Hello();
-            }
-        }
 
         // ==== helpers ====
         private string GenerateJwt()
@@ -210,7 +194,7 @@ namespace AutoSweep.Paissa
                 { "iss", "PaissaDB" },
                 { "iat", DateTimeOffset.Now.ToUnixTimeSeconds() }
             };
-            return JWT.Encode(payload, secret, JwsAlgorithm.HS256);
+            return encoder.Encode(payload, secret);
         }
 
         private string GetWSRouteWithAuth()

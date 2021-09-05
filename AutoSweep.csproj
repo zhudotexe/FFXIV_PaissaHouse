@@ -1,10 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Title>AutoSweep</Title>
+        <Title>autoSweep</Title>
         <Authors>zhudotexe</Authors>
-        <TargetFramework>net5.0-windows7.0</TargetFramework>
-        <Platforms>x64</Platforms>
+        <TargetFramework>net5.0-windows</TargetFramework>
         <LangVersion>9</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Deterministic>true</Deterministic>
@@ -14,6 +13,7 @@
         <OutputPath>bin\$(Configuration)\</OutputPath>
         <DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <AssemblyName>autoSweep</AssemblyName>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -65,15 +65,12 @@
     <ItemGroup>
         <PackageReference Include="DalamudPackager" Version="2.1.2" />
         <PackageReference Include="ILRepack" Version="2.0.18" />
-        <PackageReference Include="jose-jwt" Version="3.2.0" />
+        <PackageReference Include="JWT" Version="8.2.3" />
         <PackageReference Include="WebSocketSharp.Standard" Version="1.0.3" />
     </ItemGroup>
 
     <ItemGroup>
         <Content Include="autoSweep.json">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <Content Include="images\**">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
@@ -95,14 +92,14 @@
         <Exec Command="copy $(TargetDir)*.pdb $(AppData)\XIVLauncher\devPlugins\$(TargetName)" />
     </Target>
 
-    <!--  <Target Name="PostBuild_Release" AfterTargets="PostBuild" Condition=" '$(Configuration)' == 'Release' ">-->
-    <!--    <ItemGroup>-->
-    <!--      <DeleteFiles Include="$(TargetDir)out\*.dll" Exclude="$(TargetDir)out\$(TargetFileName)" />-->
-    <!--    </ItemGroup>-->
-    <!--    <Delete Files="@(DeleteFiles)" />-->
-    <!--    <DalamudPackager ProjectDir="$(ProjectDir)" OutputPath="$(OutputPath)out\" AssemblyName="$(AssemblyName)" VersionComponents="4" MakeZip="true"/>-->
-    <!--    <MakeDir Directories="$(TargetDir)out\$(AssemblyName)\images" />-->
-    <!--    <Exec Command="copy $(ProjectDir)..\..\assets\*.png $(TargetDir)out\$(AssemblyName)\images\*.png" />-->
-    <!--  </Target>-->
+    <Target Name="PostBuild_Release" AfterTargets="PostBuild" Condition=" '$(Configuration)' == 'Release' ">
+        <ItemGroup>
+            <DeleteFiles Include="$(TargetDir)out\*.dll" Exclude="$(TargetDir)out\$(TargetFileName)" />
+        </ItemGroup>
+        <Delete Files="@(DeleteFiles)" />
+        <DalamudPackager ProjectDir="$(ProjectDir)" OutputPath="$(OutputPath)out\" AssemblyName="$(AssemblyName)" VersionComponents="4" MakeZip="true" />
+        <MakeDir Directories="$(TargetDir)out\$(AssemblyName)\images" />
+<!--        <Exec Command="copy $(ProjectDir)\images\*.png $(TargetDir)out\$(AssemblyName)\images\*.png" />-->
+    </Target>
 
 </Project>

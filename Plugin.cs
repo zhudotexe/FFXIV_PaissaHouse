@@ -2,6 +2,7 @@
 using AutoSweep.Paissa;
 using AutoSweep.Structures;
 using Dalamud.Data;
+using Dalamud.Game;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
@@ -23,12 +24,13 @@ namespace AutoSweep
         private const int numWardsPerDistrict = 24;
 
         // frameworks/data
-        [PluginService] private static DalamudPluginInterface Pi { get; set; }
-        [PluginService] private static ChatGui Chat { get; set; }
-        [PluginService] private static GameNetwork Network { get; set; }
-        [PluginService] private static DataManager Data { get; set; }
-        [PluginService] private static CommandManager Commands { get; set; }
-        [PluginService] private static ClientState ClientState { get; set; }
+        [PluginService] public static DalamudPluginInterface Pi { get; private set; }
+        [PluginService] public static ChatGui Chat { get; private set; }
+        [PluginService] public static GameNetwork Network { get; private set; }
+        [PluginService] public static DataManager Data { get; private set; }
+        [PluginService] public static CommandManager Commands { get; private set; }
+        [PluginService] public static ClientState ClientState { get; private set; }
+        [PluginService] public static Framework Framework { get; private set; }
         private Configuration configuration;
         private PluginUI ui;
         private ExcelSheet<TerritoryType> territories;
@@ -38,6 +40,7 @@ namespace AutoSweep
         // state
         private SweepState sweepState;
         private PaissaClient paissaClient;
+        private bool clientNeedsHello = true;
 
         public Plugin()
         {
@@ -55,13 +58,15 @@ namespace AutoSweep
             });
 
             // event hooks
-            Network.OnNetworkMessage += OnNetworkEvent;
+            Network.NetworkMessage += OnNetworkEvent;
             Pi.UiBuilder.Draw += DrawUI;
             Pi.UiBuilder.OpenConfigUi += DrawConfigUI;
+            Framework.Update += OnUpdateEvent;
+            ClientState.Login += OnLogin;
 
             // paissa setup
             this.sweepState = new SweepState(numWardsPerDistrict);
-            this.paissaClient = new PaissaClient();
+            this.paissaClient = Pi.Create<PaissaClient>();
             this.paissaClient.OnPlotOpened += OnPlotOpened;
 
             PluginLog.LogDebug($"Initialization complete: configVersion={this.configuration.Version}");
@@ -70,7 +75,9 @@ namespace AutoSweep
         public void Dispose()
         {
             ui.Dispose();
-            Network.OnNetworkMessage -= OnNetworkEvent;
+            Network.NetworkMessage -= OnNetworkEvent;
+            Framework.Update -= OnUpdateEvent;
+            ClientState.Login -= OnLogin;
             Commands.RemoveHandler(commandName);
             paissaClient?.Dispose();
             Pi.Dispose();
@@ -86,6 +93,19 @@ namespace AutoSweep
                 default:
                     this.ui.SettingsVisible = true;
                     break;
+            }
+        }
+        
+        private void OnLogin(object _, EventArgs __)
+        {
+            clientNeedsHello = true;
+        }
+
+        private void OnUpdateEvent(Framework framework)
+        {
+            if (clientNeedsHello && ClientState.LocalPlayer != null) {
+                clientNeedsHello = false;
+                paissaClient?.Hello();
             }
         }
 
