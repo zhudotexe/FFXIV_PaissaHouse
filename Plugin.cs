@@ -1,8 +1,14 @@
 ﻿using System;
 using AutoSweep.Paissa;
 using AutoSweep.Structures;
+using Dalamud.Data;
+using Dalamud.Game;
+using Dalamud.Game.ClientState;
 using Dalamud.Game.Command;
-using Dalamud.Game.Internal.Network;
+using Dalamud.Game.Gui;
+using Dalamud.Game.Network;
+using Dalamud.IoC;
+using Dalamud.Logging;
 using Dalamud.Plugin;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
@@ -18,7 +24,13 @@ namespace AutoSweep
         private const int numWardsPerDistrict = 24;
 
         // frameworks/data
-        private DalamudPluginInterface pi;
+        [PluginService] public static DalamudPluginInterface Pi { get; private set; }
+        [PluginService] public static ChatGui Chat { get; private set; }
+        [PluginService] public static GameNetwork Network { get; private set; }
+        [PluginService] public static DataManager Data { get; private set; }
+        [PluginService] public static CommandManager Commands { get; private set; }
+        [PluginService] public static ClientState ClientState { get; private set; }
+        [PluginService] public static Framework Framework { get; private set; }
         private Configuration configuration;
         private PluginUI ui;
         private ExcelSheet<TerritoryType> territories;
@@ -28,32 +40,33 @@ namespace AutoSweep
         // state
         private SweepState sweepState;
         private PaissaClient paissaClient;
+        private bool clientNeedsHello = true;
 
-        public void Initialize(DalamudPluginInterface pluginInterface)
+        public Plugin()
         {
-            this.pi = pluginInterface;
-
             // setup
-            this.configuration = this.pi.GetPluginConfig() as Configuration ?? new Configuration();
-            this.configuration.Initialize(this.pi);
+            this.configuration = Pi.GetPluginConfig() as Configuration ?? new Configuration();
+            this.configuration.Initialize(Pi);
             this.ui = new PluginUI(this.configuration);
-            this.territories = pi.Data.GetExcelSheet<TerritoryType>();
-            this.worlds = pi.Data.GetExcelSheet<World>();
-            this.housingLandSets = pi.Data.GetExcelSheet<HousingLandSet>();
+            this.territories = Data.GetExcelSheet<TerritoryType>();
+            this.worlds = Data.GetExcelSheet<World>();
+            this.housingLandSets = Data.GetExcelSheet<HousingLandSet>();
 
-            this.pi.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
+            Commands.AddHandler(commandName, new CommandInfo(OnCommand)
             {
                 HelpMessage = $"Configure PaissaHouse settings.\n\"{commandName} reset\" to reset a sweep if sweeping the same district multiple times in a row."
             });
 
             // event hooks
-            this.pi.Framework.Network.OnNetworkMessage += OnNetworkEvent;
-            this.pi.UiBuilder.OnBuildUi += DrawUI;
-            this.pi.UiBuilder.OnOpenConfigUi += (sender, args) => DrawConfigUI();
+            Network.NetworkMessage += OnNetworkEvent;
+            Pi.UiBuilder.Draw += DrawUI;
+            Pi.UiBuilder.OpenConfigUi += DrawConfigUI;
+            Framework.Update += OnUpdateEvent;
+            ClientState.Login += OnLogin;
 
             // paissa setup
             this.sweepState = new SweepState(numWardsPerDistrict);
-            this.paissaClient = new PaissaClient(this.pi);
+            this.paissaClient = Pi.Create<PaissaClient>();
             this.paissaClient.OnPlotOpened += OnPlotOpened;
 
             PluginLog.LogDebug($"Initialization complete: configVersion={this.configuration.Version}");
@@ -61,11 +74,13 @@ namespace AutoSweep
 
         public void Dispose()
         {
-            this.ui.Dispose();
-            this.pi.Framework.Network.OnNetworkMessage -= OnNetworkEvent;
-            this.pi.CommandManager.RemoveHandler(commandName);
-            this.paissaClient?.Dispose();
-            this.pi.Dispose();
+            ui.Dispose();
+            Network.NetworkMessage -= OnNetworkEvent;
+            Framework.Update -= OnUpdateEvent;
+            ClientState.Login -= OnLogin;
+            Commands.RemoveHandler(commandName);
+            paissaClient?.Dispose();
+            Pi.Dispose();
         }
 
         // ==== dalamud events ====
@@ -81,12 +96,25 @@ namespace AutoSweep
             }
         }
 
+        private void OnLogin(object _, EventArgs __)
+        {
+            clientNeedsHello = true;
+        }
+
+        private void OnUpdateEvent(Framework framework)
+        {
+            if (clientNeedsHello && ClientState?.LocalPlayer != null && paissaClient != null) {
+                clientNeedsHello = false;
+                paissaClient.Hello();
+            }
+        }
+
         private void OnNetworkEvent(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction)
         {
             if (!this.configuration.Enabled) return;
             if (direction != NetworkMessageDirection.ZoneDown) return;
-            if (!this.pi.Data.IsDataReady) return;
-            if (opCode == this.pi.Data.ServerOpCodes["HousingWardInfo"]) {
+            if (!Data.IsDataReady) return;
+            if (opCode == Data.ServerOpCodes["HousingWardInfo"]) {
                 this.OnHousingWardInfo(dataPtr);
             }
         }
@@ -104,7 +132,7 @@ namespace AutoSweep
 
                 var districtName = this.territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId).PlaceName.Value.Name;
                 var worldName = this.worlds.GetRow((uint)wardInfo.LandIdent.WorldId).Name;
-                this.pi.Framework.Gui.Chat.Print($"Began sweep for {districtName} ({worldName})");
+                Chat.Print($"Began sweep for {districtName} ({worldName})");
             }
 
             // if we've seen this ward already, ignore it
@@ -138,8 +166,8 @@ namespace AutoSweep
             // does the config want notifs for this world?
             var eventWorld = worlds.GetRow(e.PlotDetail.world_id);
             if (!(configuration.AllNotifs
-                  || (configuration.HomeworldNotifs && (e.PlotDetail.world_id == pi.ClientState.LocalPlayer?.HomeWorld.Id))
-                  || (configuration.DatacenterNotifs && (eventWorld.DataCenter.Row == pi.ClientState.LocalPlayer?.HomeWorld.GameData.DataCenter.Row))))
+                  || (configuration.HomeworldNotifs && (e.PlotDetail.world_id == ClientState.LocalPlayer?.HomeWorld.Id))
+                  || (configuration.DatacenterNotifs && (eventWorld.DataCenter.Row == ClientState.LocalPlayer?.HomeWorld.GameData.DataCenter.Row))))
                 return;
             // what about house sizes in this district?
             DistrictNotifConfig districtNotifs;
@@ -191,9 +219,9 @@ namespace AutoSweep
         {
             var districtName = territories.GetRow((uint)sweepState.DistrictId).PlaceName.Value.Name;
 
-            pi.Framework.Gui.Chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you for your contribution!");
-            pi.Framework.Gui.Chat.Print($"Here's a summary of open plots in {districtName}:");
-            pi.Framework.Gui.Chat.Print($"{districtName}: {sweepState.OpenHouses.Count} open plots.");
+            Chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you for your contribution!");
+            Chat.Print($"Here's a summary of open plots in {districtName}:");
+            Chat.Print($"{districtName}: {sweepState.OpenHouses.Count} open plots.");
             foreach (var openHouse in sweepState.OpenHouses) {
                 OnFoundOpenHouse((uint)sweepState.WorldId, (uint)sweepState.DistrictId, openHouse.WardNum, openHouse.PlotNum, openHouse.HouseInfoEntry.HousePrice);
             }
@@ -249,11 +277,11 @@ namespace AutoSweep
                     output = $"{messagePrefix}{districtName} {wardNum}-{plotNum} ({houseSizeName}, {housePriceMillions:F3}m)";
                     break;
             }
-            this.pi.Framework.Gui.Chat.Print(output);
+            Chat.Print(output);
         }
 
         // ==== helpers ====
-        private uint TerritoryTypeIdToLandSetId(uint territoryTypeId)
+        private static uint TerritoryTypeIdToLandSetId(uint territoryTypeId)
         {
             switch (territoryTypeId) {
                 case 641: // shirogane
@@ -265,7 +293,7 @@ namespace AutoSweep
             }
         }
 
-        private string FormatCustomOutputString(string template, string districtName, string districtNameNoSpaces, string worldName, string wardNum, string plotNum,
+        private static string FormatCustomOutputString(string template, string districtName, string districtNameNoSpaces, string worldName, string wardNum, string plotNum,
             string housePrice, string housePriceMillions, string houseSizeName)
         {
             // mildly disgusting

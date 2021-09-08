@@ -5,9 +5,13 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using AutoSweep.Structures;
-using Dalamud.Game.Internal;
-using Dalamud.Plugin;
-using Jose;
+using Dalamud.Game.ClientState;
+using Dalamud.Game.Gui;
+using Dalamud.IoC;
+using Dalamud.Logging;
+using JWT;
+using JWT.Algorithms;
+using JWT.Serializers;
 using Newtonsoft.Json;
 using WebSocketSharp;
 
@@ -17,9 +21,12 @@ namespace AutoSweep.Paissa
     {
         private readonly HttpClient http;
         private readonly WebSocket ws;
-        private readonly DalamudPluginInterface pi;
-        private bool needsHello = true;
+        private readonly JwtEncoder encoder = new JwtEncoder(new HMACSHA256Algorithm(), new JsonNetSerializer(), new JwtBase64UrlEncoder());
         private bool disposed = false;
+
+        // dalamud
+        [PluginService] private static ClientState ClientState { get; set; }
+        [PluginService] private static ChatGui Chat { get; set; }
 
 #if DEBUG
         private const string apiBase = "http://127.0.0.1:8000";
@@ -35,7 +42,7 @@ namespace AutoSweep.Paissa
 
         public event EventHandler<PlotSoldEventArgs> OnPlotSold;
 
-        public PaissaClient(DalamudPluginInterface pi)
+        public PaissaClient()
         {
             http = new HttpClient();
             this.pi = pi;
@@ -46,16 +53,14 @@ namespace AutoSweep.Paissa
             ws.OnMessage += OnWSMessage;
             ws.OnClose += OnWSClose;
             ws.OnError += OnWSError;
-            ws.ConnectAsync();
+            Task.Run(() => ws.Connect());
         }
 
         public void Dispose()
         {
             disposed = true;
             http.Dispose();
-            ws.CloseAsync(1000);
-            this.pi.ClientState.OnLogin -= OnLogin;
-            this.pi.Framework.OnUpdateEvent -= OnUpdateEvent;
+            Task.Run(() => ws?.Close(1000));
         }
 
         // ==== HTTP ====
@@ -64,15 +69,15 @@ namespace AutoSweep.Paissa
         /// </summary>
         public async void Hello()
         {
-            var player = pi.ClientState.LocalPlayer;
+            var player = ClientState.LocalPlayer;
             if (player == null)
                 return;
             var charInfo = new Dictionary<string, object>()
             {
-                {"cid", pi.ClientState.LocalContentId},
-                {"name", player.Name},
-                {"world", player.HomeWorld.GameData.Name.ToString()},
-                {"worldId", player.HomeWorld.Id}
+                { "cid", ClientState.LocalContentId },
+                { "name", player.Name.ToString() },
+                { "world", player.HomeWorld.GameData.Name.ToString() },
+                { "worldId", player.HomeWorld.Id }
             };
             var content = JsonConvert.SerializeObject(charInfo);
             PluginLog.Debug(content);
@@ -119,12 +124,12 @@ namespace AutoSweep.Paissa
                 if (!response.IsSuccessStatusCode) {
                     var respText = await response.Content.ReadAsStringAsync();
                     PluginLog.Warning($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase}):\n{respText}");
-                    pi.Framework.Gui.Chat.PrintError($"There was an error connecting to PaissaDB: {response.ReasonPhrase}");
+                    Chat.PrintError($"There was an error connecting to PaissaDB: {response.ReasonPhrase}");
                 }
             }
             catch (Exception e) {
                 PluginLog.Warning(e, $"{request.Method} {request.RequestUri} raised an error:");
-                pi.Framework.Gui.Chat.PrintError("There was an error connecting to PaissaDB.");
+                Chat.PrintError("There was an error connecting to PaissaDB.");
             }
         }
 
@@ -176,35 +181,22 @@ namespace AutoSweep.Paissa
             PluginLog.Warning($"WebSocket closed unexpectedly: will reconnect to socket in {t / 1000f:F3} seconds");
             Task.Run(async () => await Task.Delay(t)).ContinueWith(_ =>
             {
-                if (!disposed) ws.ConnectAsync();
+                if (!disposed) ws.Connect();
             });
         }
 
-        // ==== Dalamud listeners ====
-        private void OnLogin(object _, EventArgs __)
-        {
-            needsHello = true;
-        }
-
-        private void OnUpdateEvent(Framework framework)
-        {
-            if (needsHello && pi.ClientState.LocalPlayer != null) {
-                needsHello = false;
-                Hello();
-            }
-        }
 
         // ==== helpers ====
         private string GenerateJwt()
         {
             var payload = new Dictionary<string, object>()
             {
-                {"cid", pi.ClientState.LocalContentId},
-                {"aud", "PaissaHouse"},
-                {"iss", "PaissaDB"},
-                {"iat", DateTimeOffset.Now.ToUnixTimeSeconds()}
+                { "cid", ClientState.LocalContentId },
+                { "aud", "PaissaHouse" },
+                { "iss", "PaissaDB" },
+                { "iat", DateTimeOffset.Now.ToUnixTimeSeconds() }
             };
-            return JWT.Encode(payload, secret, JwsAlgorithm.HS256);
+            return encoder.Encode(payload, secret);
         }
 
         private string GetWSRouteWithAuth()
