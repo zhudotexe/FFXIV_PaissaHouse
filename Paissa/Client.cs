@@ -45,9 +45,6 @@ namespace AutoSweep.Paissa
         public PaissaClient()
         {
             http = new HttpClient();
-            this.pi = pi;
-            this.pi.ClientState.OnLogin += OnLogin;
-            this.pi.Framework.OnUpdateEvent += OnUpdateEvent;
             ws = new WebSocket(GetWSRouteWithAuth());
             ws.OnOpen += OnWSOpen;
             ws.OnMessage += OnWSMessage;
