@@ -7,6 +7,7 @@ using Dalamud.Game.ClientState;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
 using Dalamud.Game.Network;
+using Dalamud.Game.Text;
 using Dalamud.Logging;
 using Dalamud.Plugin;
 using Lumina.Excel;
@@ -176,7 +177,7 @@ namespace AutoSweep
         /// </summary>
         private void OnPlotOpened(object sender, PlotOpenedEventArgs e)
         {
-            if (!this.configuration.Enabled) return;
+            if (!configuration.Enabled) return;
             if (e.PlotDetail == null) return;
             // does the config want notifs for this world?
             var eventWorld = worlds.GetRow(e.PlotDetail.world_id);
@@ -280,7 +281,7 @@ namespace AutoSweep
                     output = $"{messagePrefix}{districtName} {wardNum}-{plotNum} ({houseSizeName}, {housePriceMillions:F3}m)";
                     break;
             }
-            chat.Print(output);
+            SendChatToConfiguredChannel(output);
         }
 
         // ==== helpers ====
@@ -309,15 +310,25 @@ namespace AutoSweep
                 .Replace("{houseSizeName}", houseSizeName);
         }
 
+        private void SendChatToConfiguredChannel(string message)
+        {
+            chat.PrintChat(new XivChatEntry
+            {
+                Name = "[PaissaHouse]",
+                Message = message,
+                Type = configuration.ChatType
+            });
+        }
+
         // ==== UI ====
         private void DrawUI()
         {
-            this.ui.Draw();
+            ui.Draw();
         }
 
         private void DrawConfigUI()
         {
-            this.ui.SettingsVisible = true;
+            ui.SettingsVisible = true;
         }
     }
 }

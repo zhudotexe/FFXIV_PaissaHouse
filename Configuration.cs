@@ -1,5 +1,6 @@
 ﻿using System;
 using Dalamud.Configuration;
+using Dalamud.Game.Text;
 using Dalamud.Plugin;
 
 namespace AutoSweep
@@ -7,7 +8,7 @@ namespace AutoSweep
     [Serializable]
     public class Configuration : IPluginConfiguration
     {
-        public int Version { get; set; } = 2;
+        public int Version { get; set; } = 3;
 
         public bool Enabled { get; set; } = true;
         public string OutputFormatString { get; set; } = "";
@@ -22,6 +23,8 @@ namespace AutoSweep
         public bool HomeworldNotifs { get; set; } = true; // receive alerts for plots on your homeworld
         public bool DatacenterNotifs { get; set; } = false; // receive alerts for plots on all worlds on your data center
         public bool AllNotifs { get; set; } = false; // receive alerts for all worlds
+
+        public XivChatType ChatType { get; set; } = XivChatType.Debug;
 
         // the below exist just to make saving less cumbersome
         [NonSerialized]

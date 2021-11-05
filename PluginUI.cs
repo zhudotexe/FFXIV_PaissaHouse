@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Numerics;
+using Dalamud.Game.Text;
+using Dalamud.Utility;
 using ImGuiNET;
 
 namespace AutoSweep
@@ -95,6 +97,19 @@ namespace AutoSweep
                             ImGui.SetTooltip("Whether or not to receive notifications about all new plots for sale, regardless of world or data center.");
                         }
                         ImGui.EndTabItem();
+                        
+                        // chat type
+                        var outputChatType = configuration.ChatType;
+                        if (ImGui.BeginCombo("Output Chat Channel", outputChatType.ToString())) {
+                            foreach (XivChatType chatType in Enum.GetValues(typeof(XivChatType))) {
+                                var selected = chatType == outputChatType;
+                                if (ImGui.Selectable(chatType.GetAttribute<XivChatTypeInfoAttribute>()?.FancyName ?? chatType.ToString(), selected))
+                                    configuration.ChatType = chatType;
+                                if (selected)
+                                    ImGui.SetItemDefaultFocus();
+                            }
+                            ImGui.EndCombo();
+                        }
                     }
                     DrawTabItemForDistrict("Mist", configuration.Mist);
                     DrawTabItemForDistrict("The Lavender Beds", configuration.LavenderBeds);
