@@ -200,7 +200,7 @@ namespace AutoSweep
                     districtNotifs = configuration.Shirogane;
                     break;
                 case 886:
-                    districtNotifs = configuration.Firmament;
+                    districtNotifs = configuration.Empyrean;
                     break;
                 default:
                     PluginLog.Warning($"Unknown district in plot open event: {e.PlotDetail.district_id}");

@@ -1,6 +1,6 @@
-﻿using Dalamud.Configuration;
+﻿using System;
+using Dalamud.Configuration;
 using Dalamud.Plugin;
-using System;
 
 namespace AutoSweep
 {
@@ -17,7 +17,7 @@ namespace AutoSweep
         public DistrictNotifConfig LavenderBeds { get; set; } = new DistrictNotifConfig();
         public DistrictNotifConfig Goblet { get; set; } = new DistrictNotifConfig();
         public DistrictNotifConfig Shirogane { get; set; } = new DistrictNotifConfig();
-        public DistrictNotifConfig Firmament { get; set; } = new DistrictNotifConfig(); // futureproofing :)
+        public DistrictNotifConfig Empyrean { get; set; } = new DistrictNotifConfig();
 
         public bool HomeworldNotifs { get; set; } = true; // receive alerts for plots on your homeworld
         public bool DatacenterNotifs { get; set; } = false; // receive alerts for plots on all worlds on your data center
@@ -34,7 +34,7 @@ namespace AutoSweep
 
         public void Save()
         {
-            this.pluginInterface.SavePluginConfig(this);
+            pluginInterface.SavePluginConfig(this);
         }
     }
 
