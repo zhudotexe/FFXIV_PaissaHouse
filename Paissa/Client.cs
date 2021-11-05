@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using AutoSweep.Structures;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.Gui;
-using Dalamud.IoC;
 using Dalamud.Logging;
 using JWT;
 using JWT.Algorithms;
@@ -20,13 +19,13 @@ namespace AutoSweep.Paissa
     public class PaissaClient : IDisposable
     {
         private readonly HttpClient http;
-        private readonly WebSocket ws;
+        private WebSocket ws;
         private readonly JwtEncoder encoder = new JwtEncoder(new HMACSHA256Algorithm(), new JsonNetSerializer(), new JwtBase64UrlEncoder());
         private bool disposed = false;
 
         // dalamud
-        [PluginService] private static ClientState ClientState { get; set; }
-        [PluginService] private static ChatGui Chat { get; set; }
+        private readonly ClientState clientState;
+        private readonly ChatGui chat;
 
 #if DEBUG
         private const string apiBase = "http://127.0.0.1:8000";
@@ -39,18 +38,14 @@ namespace AutoSweep.Paissa
         private readonly byte[] secret = Encoding.UTF8.GetBytes(Secrets.JwtSecret);
 
         public event EventHandler<PlotOpenedEventArgs> OnPlotOpened;
-
         public event EventHandler<PlotSoldEventArgs> OnPlotSold;
 
-        public PaissaClient()
+        public PaissaClient(ClientState clientState, ChatGui chatGui)
         {
+            this.clientState = clientState;
+            chat = chatGui;
             http = new HttpClient();
-            ws = new WebSocket(GetWSRouteWithAuth());
-            ws.OnOpen += OnWSOpen;
-            ws.OnMessage += OnWSMessage;
-            ws.OnClose += OnWSClose;
-            ws.OnError += OnWSError;
-            Task.Run(() => ws.Connect());
+            ReconnectWS();
         }
 
         public void Dispose()
@@ -66,12 +61,12 @@ namespace AutoSweep.Paissa
         /// </summary>
         public async void Hello()
         {
-            var player = ClientState.LocalPlayer;
+            var player = clientState.LocalPlayer;
             if (player == null)
                 return;
             var charInfo = new Dictionary<string, object>()
             {
-                { "cid", ClientState.LocalContentId },
+                { "cid", clientState.LocalContentId },
                 { "name", player.Name.ToString() },
                 { "world", player.HomeWorld.GameData.Name.ToString() },
                 { "worldId", player.HomeWorld.Id }
@@ -121,16 +116,31 @@ namespace AutoSweep.Paissa
                 if (!response.IsSuccessStatusCode) {
                     var respText = await response.Content.ReadAsStringAsync();
                     PluginLog.Warning($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase}):\n{respText}");
-                    Chat.PrintError($"There was an error connecting to PaissaDB: {response.ReasonPhrase}");
+                    chat.PrintError($"There was an error connecting to PaissaDB: {response.ReasonPhrase}");
                 }
             }
             catch (Exception e) {
                 PluginLog.Warning(e, $"{request.Method} {request.RequestUri} raised an error:");
-                Chat.PrintError("There was an error connecting to PaissaDB.");
+                chat.PrintError("There was an error connecting to PaissaDB.");
             }
         }
 
         // ==== WebSocket ====
+        private void ReconnectWS()
+        {
+            Task.Run(() =>
+            {
+                ws?.Close(1000);
+                ws = new WebSocket(GetWSRouteWithAuth());
+                ws.OnOpen += OnWSOpen;
+                ws.OnMessage += OnWSMessage;
+                ws.OnClose += OnWSClose;
+                ws.OnError += OnWSError;
+                ws.Connect();
+                PluginLog.Debug("ReconnectWS complete");
+            });
+        }
+
         private void OnWSOpen(object sender, EventArgs e)
         {
             PluginLog.Information("WebSocket connected");
@@ -178,7 +188,7 @@ namespace AutoSweep.Paissa
             PluginLog.Warning($"WebSocket closed unexpectedly: will reconnect to socket in {t / 1000f:F3} seconds");
             Task.Run(async () => await Task.Delay(t)).ContinueWith(_ =>
             {
-                if (!disposed) ws.Connect();
+                if (!disposed) ReconnectWS();
             });
         }
 
@@ -188,7 +198,7 @@ namespace AutoSweep.Paissa
         {
             var payload = new Dictionary<string, object>()
             {
-                { "cid", ClientState.LocalContentId },
+                { "cid", clientState.LocalContentId },
                 { "aud", "PaissaHouse" },
                 { "iss", "PaissaDB" },
                 { "iat", DateTimeOffset.Now.ToUnixTimeSeconds() }

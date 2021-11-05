@@ -7,7 +7,6 @@ using Dalamud.Game.ClientState;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
 using Dalamud.Game.Network;
-using Dalamud.IoC;
 using Dalamud.Logging;
 using Dalamud.Plugin;
 using Lumina.Excel;
@@ -24,63 +23,78 @@ namespace AutoSweep
         private const int numWardsPerDistrict = 24;
 
         // frameworks/data
-        [PluginService] public static DalamudPluginInterface Pi { get; private set; }
-        [PluginService] public static ChatGui Chat { get; private set; }
-        [PluginService] public static GameNetwork Network { get; private set; }
-        [PluginService] public static DataManager Data { get; private set; }
-        [PluginService] public static CommandManager Commands { get; private set; }
-        [PluginService] public static ClientState ClientState { get; private set; }
-        [PluginService] public static Framework Framework { get; private set; }
-        private Configuration configuration;
-        private PluginUI ui;
-        private ExcelSheet<TerritoryType> territories;
-        private ExcelSheet<World> worlds;
-        private ExcelSheet<HousingLandSet> housingLandSets;
+        private readonly DalamudPluginInterface pi;
+        private readonly ChatGui chat;
+        private readonly GameNetwork network;
+        private readonly DataManager data;
+        private readonly CommandManager commands;
+        private readonly ClientState clientState;
+        private readonly Framework framework;
+        private readonly Configuration configuration;
+        private readonly PluginUI ui;
+        private readonly ExcelSheet<TerritoryType> territories;
+        private readonly ExcelSheet<World> worlds;
+        private readonly ExcelSheet<HousingLandSet> housingLandSets;
 
         // state
-        private SweepState sweepState;
-        private PaissaClient paissaClient;
+        private readonly SweepState sweepState;
+        private readonly PaissaClient paissaClient;
         private bool clientNeedsHello = true;
 
-        public Plugin()
+        public Plugin(
+            DalamudPluginInterface pi,
+            ChatGui chat,
+            GameNetwork network,
+            DataManager data,
+            CommandManager commands,
+            ClientState clientState,
+            Framework framework)
         {
-            // setup
-            this.configuration = Pi.GetPluginConfig() as Configuration ?? new Configuration();
-            this.configuration.Initialize(Pi);
-            this.ui = new PluginUI(this.configuration);
-            this.territories = Data.GetExcelSheet<TerritoryType>();
-            this.worlds = Data.GetExcelSheet<World>();
-            this.housingLandSets = Data.GetExcelSheet<HousingLandSet>();
+            this.pi = pi;
+            this.chat = chat;
+            this.network = network;
+            this.data = data;
+            this.commands = commands;
+            this.clientState = clientState;
+            this.framework = framework;
 
-            Commands.AddHandler(commandName, new CommandInfo(OnCommand)
+            // setup
+            configuration = pi.GetPluginConfig() as Configuration ?? new Configuration();
+            configuration.Initialize(pi);
+            ui = new PluginUI(configuration);
+            territories = data.GetExcelSheet<TerritoryType>();
+            worlds = data.GetExcelSheet<World>();
+            housingLandSets = data.GetExcelSheet<HousingLandSet>();
+
+            commands.AddHandler(commandName, new CommandInfo(OnCommand)
             {
                 HelpMessage = $"Configure PaissaHouse settings.\n\"{commandName} reset\" to reset a sweep if sweeping the same district multiple times in a row."
             });
 
             // event hooks
-            Network.NetworkMessage += OnNetworkEvent;
-            Pi.UiBuilder.Draw += DrawUI;
-            Pi.UiBuilder.OpenConfigUi += DrawConfigUI;
-            Framework.Update += OnUpdateEvent;
-            ClientState.Login += OnLogin;
+            network.NetworkMessage += OnNetworkEvent;
+            pi.UiBuilder.Draw += DrawUI;
+            pi.UiBuilder.OpenConfigUi += DrawConfigUI;
+            framework.Update += OnUpdateEvent;
+            clientState.Login += OnLogin;
 
             // paissa setup
-            this.sweepState = new SweepState(numWardsPerDistrict);
-            this.paissaClient = Pi.Create<PaissaClient>();
-            this.paissaClient.OnPlotOpened += OnPlotOpened;
+            sweepState = new SweepState(numWardsPerDistrict);
+            paissaClient = new PaissaClient(clientState, chat);
+            paissaClient.OnPlotOpened += OnPlotOpened;
 
-            PluginLog.LogDebug($"Initialization complete: configVersion={this.configuration.Version}");
+            PluginLog.LogDebug($"Initialization complete: configVersion={configuration.Version}");
         }
 
         public void Dispose()
         {
             ui.Dispose();
-            Network.NetworkMessage -= OnNetworkEvent;
-            Framework.Update -= OnUpdateEvent;
-            ClientState.Login -= OnLogin;
-            Commands.RemoveHandler(commandName);
+            network.NetworkMessage -= OnNetworkEvent;
+            framework.Update -= OnUpdateEvent;
+            clientState.Login -= OnLogin;
+            commands.RemoveHandler(commandName);
             paissaClient?.Dispose();
-            Pi.Dispose();
+            pi.Dispose();
         }
 
         // ==== dalamud events ====
@@ -89,9 +103,10 @@ namespace AutoSweep
             switch (args) {
                 case "reset":
                     sweepState.Reset();
+                    chat.Print("The sweep state has been reset.");
                     break;
                 default:
-                    this.ui.SettingsVisible = true;
+                    ui.SettingsVisible = true;
                     break;
             }
         }
@@ -101,9 +116,9 @@ namespace AutoSweep
             clientNeedsHello = true;
         }
 
-        private void OnUpdateEvent(Framework framework)
+        private void OnUpdateEvent(Framework f)
         {
-            if (clientNeedsHello && ClientState?.LocalPlayer != null && paissaClient != null) {
+            if (clientNeedsHello && clientState?.LocalPlayer != null && paissaClient != null) {
                 clientNeedsHello = false;
                 paissaClient.Hello();
             }
@@ -111,11 +126,11 @@ namespace AutoSweep
 
         private void OnNetworkEvent(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction)
         {
-            if (!this.configuration.Enabled) return;
+            if (!configuration.Enabled) return;
             if (direction != NetworkMessageDirection.ZoneDown) return;
-            if (!Data.IsDataReady) return;
-            if (opCode == Data.ServerOpCodes["HousingWardInfo"]) {
-                this.OnHousingWardInfo(dataPtr);
+            if (!data.IsDataReady) return;
+            if (opCode == data.ServerOpCodes["HousingWardInfo"]) {
+                OnHousingWardInfo(dataPtr);
             }
         }
 
@@ -130,9 +145,9 @@ namespace AutoSweep
                 // reset last sweep info to the current sweep
                 sweepState.StartDistrictSweep(wardInfo);
 
-                var districtName = this.territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId).PlaceName.Value.Name;
-                var worldName = this.worlds.GetRow((uint)wardInfo.LandIdent.WorldId).Name;
-                Chat.Print($"Began sweep for {districtName} ({worldName})");
+                var districtName = territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId)?.PlaceName.Value?.Name;
+                var worldName = worlds.GetRow((uint)wardInfo.LandIdent.WorldId)?.Name;
+                chat.Print($"Began sweep for {districtName} ({worldName})");
             }
 
             // if we've seen this ward already, ignore it
@@ -166,8 +181,8 @@ namespace AutoSweep
             // does the config want notifs for this world?
             var eventWorld = worlds.GetRow(e.PlotDetail.world_id);
             if (!(configuration.AllNotifs
-                  || (configuration.HomeworldNotifs && (e.PlotDetail.world_id == ClientState.LocalPlayer?.HomeWorld.Id))
-                  || (configuration.DatacenterNotifs && (eventWorld.DataCenter.Row == ClientState.LocalPlayer?.HomeWorld.GameData.DataCenter.Row))))
+                  || (configuration.HomeworldNotifs && (e.PlotDetail.world_id == clientState.LocalPlayer?.HomeWorld.Id))
+                  || (configuration.DatacenterNotifs && (eventWorld?.DataCenter.Row == clientState.LocalPlayer?.HomeWorld.GameData.DataCenter.Row))))
                 return;
             // what about house sizes in this district?
             DistrictNotifConfig districtNotifs;
@@ -209,39 +224,22 @@ namespace AutoSweep
             // do the notification
             if (!notifEnabled) return;
             OnFoundOpenHouse(e.PlotDetail.world_id, e.PlotDetail.district_id, e.PlotDetail.ward_number, e.PlotDetail.plot_number, e.PlotDetail.known_price,
-                $"New plot up for sale on {eventWorld.Name}: ");
+                $"New plot up for sale on {eventWorld?.Name}: ");
         }
 
         /// <summary>
         /// Called each time the user finishes sweeping a full district, with the wardinfo as the last ward swept. 
         /// </summary>
-        private void OnFinishedDistrictSweep(HousingWardInfo wardInfo)
+        private void OnFinishedDistrictSweep(HousingWardInfo housingWardInfo)
         {
-            var districtName = territories.GetRow((uint)sweepState.DistrictId).PlaceName.Value.Name;
+            var districtName = territories.GetRow((uint)sweepState.DistrictId)?.PlaceName.Value?.Name;
 
-            Chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you for your contribution!");
-            Chat.Print($"Here's a summary of open plots in {districtName}:");
-            Chat.Print($"{districtName}: {sweepState.OpenHouses.Count} open plots.");
+            chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you for your contribution!");
+            chat.Print($"Here's a summary of open plots in {districtName}:");
+            chat.Print($"{districtName}: {sweepState.OpenHouses.Count} open plots.");
             foreach (var openHouse in sweepState.OpenHouses) {
                 OnFoundOpenHouse((uint)sweepState.WorldId, (uint)sweepState.DistrictId, openHouse.WardNum, openHouse.PlotNum, openHouse.HouseInfoEntry.HousePrice);
             }
-
-            // Task.Run(async () =>
-            // {
-            //     DistrictDetail districtDetail;
-            //     try {
-            //         districtDetail = await paissaClient.GetDistrictDetailAsync(wardInfo.LandIdent.WorldId, wardInfo.LandIdent.TerritoryTypeId);
-            //     }
-            //     catch (HttpRequestException) {
-            //         pi.Framework.Gui.Chat.PrintError("There was an error getting the district summary.");
-            //         return;
-            //     }
-            //     pi.Framework.Gui.Chat.Print($"Here's a summary of open plots in {districtDetail.name}:");
-            //     pi.Framework.Gui.Chat.Print($"{districtDetail.name}: {districtDetail.num_open_plots} open plots.");
-            //     foreach (OpenPlotDetail plotDetail in districtDetail.open_plots) {
-            //         OnFoundOpenHouse(plotDetail.world_id, plotDetail.district_id, plotDetail.ward_number, plotDetail.plot_number, plotDetail.known_price);
-            //     }
-            // });
         }
 
         /// <summary>
@@ -249,19 +247,24 @@ namespace AutoSweep
         /// </summary>
         private void OnFoundOpenHouse(uint worldId, uint territoryTypeId, int wardNumber, int plotNumber, uint? price, string messagePrefix = "")
         {
-            var place = territories.GetRow(territoryTypeId).PlaceName.Value;
-            var districtName = place.NameNoArticle.RawString.Length > 0 ? place.NameNoArticle : place.Name; // languages like German do not use NameNoArticle (#2)
-            var worldName = worlds.GetRow(worldId).Name;
+            var place = territories.GetRow(territoryTypeId)?.PlaceName.Value;
+            var districtName = place?.NameNoArticle.RawString.Length > 0 ? place.NameNoArticle : place?.Name; // languages like German do not use NameNoArticle (#2)
+            var worldName = worlds.GetRow(worldId)?.Name;
 
             var landSet = housingLandSets.GetRow(TerritoryTypeIdToLandSetId(territoryTypeId));
-            var houseSize = landSet.PlotSize[plotNumber];
-            var realPrice = price.GetValueOrDefault(landSet.InitialPrice[plotNumber]); // if price is null, it's probably the default price (landupdate)
+            var houseSize = landSet?.PlotSize[plotNumber];
+            var realPrice = price.GetValueOrDefault(landSet?.InitialPrice[plotNumber] ?? 0); // if price is null, it's probably the default price (landupdate)
 
-            var districtNameNoSpaces = districtName.ToString().Replace(" ", "");
-            int wardNum = wardNumber + 1;
-            int plotNum = plotNumber + 1;
-            float housePriceMillions = realPrice / 1000000f;
-            string houseSizeName = houseSize == 0 ? "Small" : houseSize == 1 ? "Medium" : "Large";
+            var districtNameNoSpaces = districtName?.ToString().Replace(" ", "");
+            var wardNum = wardNumber + 1;
+            var plotNum = plotNumber + 1;
+            var housePriceMillions = realPrice / 1000000f;
+            var houseSizeName = houseSize switch
+            {
+                0 => "Small",
+                1 => "Medium",
+                _ => "Large"
+            };
 
             string output;
             switch (configuration.OutputFormat) {
@@ -270,27 +273,25 @@ namespace AutoSweep
                     break;
                 case OutputFormat.Custom:
                     var template = $"{messagePrefix}{configuration.OutputFormatString}";
-                    output = FormatCustomOutputString(template, districtName.ToString(), districtNameNoSpaces, worldName, wardNum.ToString(),
+                    output = FormatCustomOutputString(template, districtName?.ToString(), districtNameNoSpaces, worldName, wardNum.ToString(),
                         plotNum.ToString(), realPrice.ToString(), housePriceMillions.ToString("F3"), houseSizeName);
                     break;
                 default:
                     output = $"{messagePrefix}{districtName} {wardNum}-{plotNum} ({houseSizeName}, {housePriceMillions:F3}m)";
                     break;
             }
-            Chat.Print(output);
+            chat.Print(output);
         }
 
         // ==== helpers ====
         private static uint TerritoryTypeIdToLandSetId(uint territoryTypeId)
         {
-            switch (territoryTypeId) {
-                case 641: // shirogane
-                    return 3;
-                case 886: // firmament?
-                    return 4;
-                default: // mist, lb, gob are 339-341
-                    return territoryTypeId - 339;
-            }
+            return territoryTypeId switch
+            {
+                641 => 3, // shirogane
+                886 => 4, // empyreum
+                _ => territoryTypeId - 339 // mist, lb, gob are 339-341
+            };
         }
 
         private static string FormatCustomOutputString(string template, string districtName, string districtNameNoSpaces, string worldName, string wardNum, string plotNum,

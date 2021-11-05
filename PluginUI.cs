@@ -1,18 +1,18 @@
-﻿using ImGuiNET;
-using System;
+﻿using System;
 using System.Numerics;
+using ImGuiNET;
 
 namespace AutoSweep
 {
     class PluginUI : IDisposable
     {
-        private Configuration configuration;
+        private readonly Configuration configuration;
 
         private bool settingsVisible = false;
         public bool SettingsVisible
         {
-            get { return this.settingsVisible; }
-            set { this.settingsVisible = value; }
+            get => settingsVisible;
+            set => settingsVisible = value;
         }
 
         public PluginUI(Configuration configuration)
@@ -25,35 +25,35 @@ namespace AutoSweep
             DrawSettingsWindow();
         }
 
-        public void DrawSettingsWindow()
+        private void DrawSettingsWindow()
         {
             if (!SettingsVisible) {
                 return;
             }
 
             ImGui.SetNextWindowSize(new Vector2(450, 210), ImGuiCond.FirstUseEver);
-            if (ImGui.Begin("PaissaHouse Configuration", ref this.settingsVisible,
+            if (ImGui.Begin("PaissaHouse Configuration", ref settingsVisible,
                 ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)) {
                 // tab bar
                 if (ImGui.BeginTabBar("paissatabs")) {
                     // tab: settings
                     if (ImGui.BeginTabItem("Settings")) {
                         // enabled
-                        var enabled = this.configuration.Enabled;
+                        var enabled = configuration.Enabled;
                         if (ImGui.Checkbox("Enabled", ref enabled)) {
-                            this.configuration.Enabled = enabled;
+                            configuration.Enabled = enabled;
                         }
                         if (ImGui.IsItemHovered()) {
                             ImGui.SetTooltip("Enable or disable PaissaHouse. If disabled, it will not look for houses, post ward information to PaissaDB, or send notifications.");
                         }
 
                         // output format
-                        var outputFormat = this.configuration.OutputFormat;
+                        var outputFormat = configuration.OutputFormat;
                         if (ImGui.BeginCombo("Output Format", outputFormat.ToString())) {
                             foreach (OutputFormat format in Enum.GetValues(typeof(OutputFormat))) {
-                                bool selected = format == outputFormat;
+                                var selected = format == outputFormat;
                                 if (ImGui.Selectable(format.ToString(), selected))
-                                    this.configuration.OutputFormat = format;
+                                    configuration.OutputFormat = format;
                                 if (selected)
                                     ImGui.SetItemDefaultFocus();
                             }
@@ -61,35 +61,35 @@ namespace AutoSweep
                         }
 
                         // custom output format
-                        if (this.configuration.OutputFormat == OutputFormat.Custom) {
-                            string customOutputFormat = this.configuration.OutputFormatString;
+                        if (configuration.OutputFormat == OutputFormat.Custom) {
+                            var customOutputFormat = configuration.OutputFormatString;
                             if (ImGui.InputText("Custom Output Format", ref customOutputFormat, 2000)) {
-                                this.configuration.OutputFormatString = customOutputFormat;
+                                configuration.OutputFormatString = customOutputFormat;
                             }
                         }
-                        
+
                         // homeworld alerts
-                        var homeworldNotifs = this.configuration.HomeworldNotifs;
+                        var homeworldNotifs = configuration.HomeworldNotifs;
                         if (ImGui.Checkbox("Notifications: Homeworld", ref homeworldNotifs)) {
-                            this.configuration.HomeworldNotifs = homeworldNotifs;
+                            configuration.HomeworldNotifs = homeworldNotifs;
                         }
                         if (ImGui.IsItemHovered()) {
                             ImGui.SetTooltip("Whether or not to receive notifications about new plots for sale on your homeworld.");
                         }
-                        
+
                         // datacenter alerts
-                        var datacenterNotifs = this.configuration.DatacenterNotifs;
+                        var datacenterNotifs = configuration.DatacenterNotifs;
                         if (ImGui.Checkbox("Notifications: Datacenter", ref datacenterNotifs)) {
-                            this.configuration.DatacenterNotifs = datacenterNotifs;
+                            configuration.DatacenterNotifs = datacenterNotifs;
                         }
                         if (ImGui.IsItemHovered()) {
                             ImGui.SetTooltip("Whether or not to receive notifications about all new plots for sale on your home data center.");
                         }
-                        
+
                         // all world alerts
-                        var allNotifs = this.configuration.AllNotifs;
+                        var allNotifs = configuration.AllNotifs;
                         if (ImGui.Checkbox("Notifications: All", ref allNotifs)) {
-                            this.configuration.AllNotifs = allNotifs;
+                            configuration.AllNotifs = allNotifs;
                         }
                         if (ImGui.IsItemHovered()) {
                             ImGui.SetTooltip("Whether or not to receive notifications about all new plots for sale, regardless of world or data center.");
@@ -107,14 +107,14 @@ namespace AutoSweep
 
                 // save and close
                 if (ImGui.Button("Save and Close")) {
-                    this.configuration.Save();
-                    this.SettingsVisible = false;
+                    configuration.Save();
+                    SettingsVisible = false;
                 }
             }
             ImGui.End();
         }
 
-        public void DrawTabItemForDistrict(string districtName, DistrictNotifConfig notifConfig)
+        private void DrawTabItemForDistrict(string districtName, DistrictNotifConfig notifConfig)
         {
             if (ImGui.BeginTabItem(districtName)) {
                 ImGui.Text($"This tab controls which houses to receive notifications for in {districtName}.\nIt won't affect the output when sweeping the whole district.");
