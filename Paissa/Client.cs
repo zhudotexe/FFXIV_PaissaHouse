@@ -102,6 +102,13 @@ namespace AutoSweep.Paissa
 
         private async Task PostFireAndForget(string route, string content)
         {
+            await PostFireAndForget(route, content, 5);
+        }
+
+        private async Task PostFireAndForget(string route, string content, ushort retries)
+        {
+            HttpResponseMessage response = null;
+
             var request = new HttpRequestMessage(HttpMethod.Post, $"{apiBase}{route}")
             {
                 Content = new StringContent(content, Encoding.UTF8, "application/json"),
@@ -110,20 +117,39 @@ namespace AutoSweep.Paissa
                     Authorization = new AuthenticationHeaderValue("Bearer", GenerateJwt())
                 }
             };
-            try {
-                var response = await http.SendAsync(request);
-                PluginLog.Debug($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase})");
-                if (!response.IsSuccessStatusCode) {
-                    var respText = await response.Content.ReadAsStringAsync();
-                    PluginLog.Warning($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase}):\n{respText}");
-                    chat.PrintError($"There was an error connecting to PaissaDB: {response.ReasonPhrase}");
+
+
+            for (int i = 0; i < retries; i++) {
+                try {
+                    response = await http.SendAsync(request);
+                    PluginLog.Debug($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase})");
+                    if (!response.IsSuccessStatusCode) {
+                        var respText = await response.Content.ReadAsStringAsync();
+                        PluginLog.Warning($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase}):\n{respText}");
+                    }
+                    else {
+                        break;
+                    }
+                }
+                catch (Exception e) {
+                    PluginLog.Warning(e, $"{request.Method} {request.RequestUri} raised an error:");
+                }
+                // if our request failed, exponential backoff for 2 * (i + 1) seconds
+                if (i + 1 < retries) {
+                    int toDelay = 2000 * (i + 1);
+                    PluginLog.Warning($"Request {i} failed, waiting for {toDelay}ms before retry...");
+                    await Task.Delay(toDelay);
                 }
             }
-            catch (Exception e) {
-                PluginLog.Warning(e, $"{request.Method} {request.RequestUri} raised an error:");
+
+            if (response == null) {
                 chat.PrintError("There was an error connecting to PaissaDB.");
             }
+            else if (!response.IsSuccessStatusCode) {
+                chat.PrintError($"There was an error connecting to PaissaDB: {response.ReasonPhrase}");
+            }
         }
+
 
         // ==== WebSocket ====
         private void ReconnectWS()

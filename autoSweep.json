@@ -7,6 +7,6 @@
   "Tags": ["housing"],
   "ImageUrls": [],
   "Punchline": "Chat alerts for player housing.",
-  "Changelog": "Added the ability to select the chat channel to receive alerts over.",
+  "Changelog": "Improved the retry and error handling logic.",
   "DalamudApiLevel": 4
 }
