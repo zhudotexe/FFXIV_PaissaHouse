@@ -3,24 +3,20 @@ using Newtonsoft.Json.Linq;
 
 // ReSharper disable InconsistentNaming
 
-namespace AutoSweep.Paissa
-{
-    public class WSMessage
-    {
+namespace AutoSweep.Paissa {
+    public class WSMessage {
         public string Type { get; set; }
         public JObject Data { get; set; }
     }
 
-    public class DistrictDetail
-    {
+    public class DistrictDetail {
         public ushort district_id { get; set; }
         public string name { get; set; }
         public ushort num_open_plots { get; set; }
         public OpenPlotDetail[] open_plots { get; set; }
     }
 
-    public class OpenPlotDetail
-    {
+    public class OpenPlotDetail {
         public ushort world_id { get; set; }
         public ushort district_id { get; set; }
         public ushort ward_number { get; set; }
@@ -33,8 +29,7 @@ namespace AutoSweep.Paissa
         public ushort est_num_devals { get; set; }
     }
 
-    public class SoldPlotDetail
-    {
+    public class SoldPlotDetail {
         public ushort world_id { get; set; }
         public ushort district_id { get; set; }
         public ushort ward_number { get; set; }

@@ -2,29 +2,24 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace AutoSweep.Structures
-{
-    public class HousingWardInfo
-    {
-        public LandIdent LandIdent;
+namespace AutoSweep.Structures {
+    public class HousingWardInfo {
         public HouseInfoEntry[] HouseInfoEntries;
+        public LandIdent LandIdent;
 
-        public static unsafe HousingWardInfo Read(IntPtr dataPtr)
-        {
-            HousingWardInfo wardInfo = new HousingWardInfo();
-            using (UnmanagedMemoryStream unmanagedMemoryStream = new UnmanagedMemoryStream((byte*)dataPtr.ToPointer(), 2656L)) {
-                using (BinaryReader binaryReader = new BinaryReader(unmanagedMemoryStream)) {
+        public static unsafe HousingWardInfo Read(IntPtr dataPtr) {
+            var wardInfo = new HousingWardInfo();
+            using (var unmanagedMemoryStream = new UnmanagedMemoryStream((byte*)dataPtr.ToPointer(), 2656L)) {
+                using (var binaryReader = new BinaryReader(unmanagedMemoryStream)) {
                     wardInfo.LandIdent = LandIdent.ReadFromBinaryReader(binaryReader);
                     wardInfo.HouseInfoEntries = new HouseInfoEntry[60];
 
-                    for (int i = 0; i < 60; i++) {
-                        HouseInfoEntry infoEntry = new HouseInfoEntry();
+                    for (var i = 0; i < 60; i++) {
+                        var infoEntry = new HouseInfoEntry();
                         infoEntry.HousePrice = binaryReader.ReadUInt32();
                         infoEntry.InfoFlags = (HousingFlags)binaryReader.ReadByte();
                         infoEntry.HouseAppeals = new sbyte[3];
-                        for (int j = 0; j < 3; j++) {
-                            infoEntry.HouseAppeals[j] = binaryReader.ReadSByte();
-                        }
+                        for (var j = 0; j < 3; j++) infoEntry.HouseAppeals[j] = binaryReader.ReadSByte();
                         infoEntry.EstateOwnerName = Encoding.UTF8.GetString(binaryReader.ReadBytes(32)).TrimEnd(new char[1]);
                         wardInfo.HouseInfoEntries[i] = infoEntry;
 

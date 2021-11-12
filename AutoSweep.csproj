@@ -64,12 +64,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DalamudPackager" Version="2.1.2" />
-        <PackageReference Include="ILRepack" Version="2.0.18" />
-        <PackageReference Include="JWT" Version="8.2.3" />
-        <PackageReference Include="WebSocketSharp.Standard" Version="1.0.3" />
+        <PackageReference Include="DalamudPackager" Version="2.1.2"/>
+        <PackageReference Include="ILRepack" Version="2.0.18"/>
+        <PackageReference Include="JWT" Version="8.2.3"/>
+        <PackageReference Include="WebSocketSharp.Standard" Version="1.0.3"/>
     </ItemGroup>
-      
+
     <ItemGroup>
         <Content Include="autoSweep.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -79,28 +79,28 @@
 
     <Target Name="PostBuild" AfterTargets="Build">
         <ItemGroup>
-            <InputAssemblies Include="$(TargetPath)" />
-            <InputAssemblies Include="$(TargetDir)*.dll" Exclude="$(TargetPath)" />
+            <InputAssemblies Include="$(TargetPath)"/>
+            <InputAssemblies Include="$(TargetDir)*.dll" Exclude="$(TargetPath)"/>
         </ItemGroup>
-        <Exec Command="$(PkgILRepack)\tools\ILRepack.exe /union /lib:$(DalamudLibPath) /out:$(TargetDir)$(TargetFileName) @(InputAssemblies, ' ')" />
-        <MakeDir Directories="$(TargetDir)out\" />
-        <Exec Command="copy $(TargetDir)$(TargetFileName) $(TargetDir)out\$(TargetFileName)" />
+        <Exec Command="$(PkgILRepack)\tools\ILRepack.exe /union /lib:$(DalamudLibPath) /out:$(TargetDir)$(TargetFileName) @(InputAssemblies, ' ')"/>
+        <MakeDir Directories="$(TargetDir)out\"/>
+        <Exec Command="copy $(TargetDir)$(TargetFileName) $(TargetDir)out\$(TargetFileName)"/>
     </Target>
 
     <Target Name="PostBuild_Debug" AfterTargets="PostBuild" Condition="'$(Configuration)' == 'Debug'">
-        <Exec Command="if not exist $(AppData)\XIVLauncher\devPlugins\$(TargetName) (mkdir $(AppData)\XIVLauncher\devPlugins\$(TargetName))" />
-        <Exec Command="copy $(TargetDir)out\$(TargetFileName) $(AppData)\XIVLauncher\devPlugins\$(TargetName)\$(TargetFileName)" />
-        <Exec Command="copy $(TargetDir)*.pdb $(AppData)\XIVLauncher\devPlugins\$(TargetName)" />
+        <Exec Command="if not exist $(AppData)\XIVLauncher\devPlugins\$(TargetName) (mkdir $(AppData)\XIVLauncher\devPlugins\$(TargetName))"/>
+        <Exec Command="copy $(TargetDir)out\$(TargetFileName) $(AppData)\XIVLauncher\devPlugins\$(TargetName)\$(TargetFileName)"/>
+        <Exec Command="copy $(TargetDir)*.pdb $(AppData)\XIVLauncher\devPlugins\$(TargetName)"/>
     </Target>
 
     <Target Name="PostBuild_Release" AfterTargets="PostBuild" Condition=" '$(Configuration)' == 'Release' ">
         <ItemGroup>
-            <DeleteFiles Include="$(TargetDir)out\*.dll" Exclude="$(TargetDir)out\$(TargetFileName)" />
+            <DeleteFiles Include="$(TargetDir)out\*.dll" Exclude="$(TargetDir)out\$(TargetFileName)"/>
         </ItemGroup>
-        <Delete Files="@(DeleteFiles)" />
-        <DalamudPackager ProjectDir="$(ProjectDir)" OutputPath="$(OutputPath)out\" AssemblyName="$(AssemblyName)" VersionComponents="4" MakeZip="true" />
-        <MakeDir Directories="$(TargetDir)out\$(AssemblyName)\images" />
-<!--        <Exec Command="copy $(ProjectDir)\images\*.png $(TargetDir)out\$(AssemblyName)\images\*.png" />-->
+        <Delete Files="@(DeleteFiles)"/>
+        <DalamudPackager ProjectDir="$(ProjectDir)" OutputPath="$(OutputPath)out\" AssemblyName="$(AssemblyName)" VersionComponents="4" MakeZip="true"/>
+        <MakeDir Directories="$(TargetDir)out\$(AssemblyName)\images"/>
+        <!--        <Exec Command="copy $(ProjectDir)\images\*.png $(TargetDir)out\$(AssemblyName)\images\*.png" />-->
     </Target>
 
 </Project>

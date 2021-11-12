@@ -1,26 +1,37 @@
 # PaissaHouse
-Looking for that perfect house? PaissaHouse lets you receive notifications when a new plot of land is up for sale on your home world, and contribute to PaissaDB when viewing housing wards at a city aetheryte/ferry.
+
+Looking for that perfect house? PaissaHouse lets you receive notifications when a new plot of land is up for sale on
+your home world, and contribute to PaissaDB when viewing housing wards at a city aetheryte/ferry.
 
 ## Usage
-Simply install and it will happily run in the background, notifying you when a new plot of land is up for sale on your home world.
 
-Use `/psweep` to open configuration, if you'd like to receive notifications for other worlds or only for certain districts.
+Simply install and it will happily run in the background, notifying you when a new plot of land is up for sale on your
+home world.
+
+Use `/psweep` to open configuration, if you'd like to receive notifications for other worlds or only for certain
+districts.
 
 ## Contributing
-PaissaHouse relies on data contributions from players like you to broadcast the latest housing data. To contribute data to PaissaDB, the API powering PaissaHouse, simply teleport
-to a major city aetheryte, select "Residential District Aethernet" -> "Go to Specified Ward (Review Tabs)" and click through the 24 wards. This is called "sweeping" a district.
 
-If all goes well, you'll see any new plots you found pop up in real time, and a summary of the district once you've clicked through the wards!
+PaissaHouse relies on data contributions from players like you to broadcast the latest housing data. To contribute data
+to PaissaDB, the API powering PaissaHouse, simply teleport to a major city aetheryte, select "Residential District
+Aethernet" -> "Go to Specified Ward (Review Tabs)" and click through the 24 wards. This is called "sweeping" a district.
+
+If all goes well, you'll see any new plots you found pop up in real time, and a summary of the district once you've
+clicked through the wards!
 
 <figure>
   <img src="https://cdn.discordapp.com/attachments/263128686004404225/842268996886724648/unknown.png">
   <figcaption>The result of tabbing through all 24 wards.</figcaption>
 </figure>
 
-If you plan on sweeping the same district multiple times in a row, run `/psweep reset` between each sweep to reset the internal sweep cache.
+If you plan on sweeping the same district multiple times in a row, run `/psweep reset` between each sweep to reset the
+internal sweep cache.
 
 ## Custom Output Format
-If using `Custom` output format, use these variables surrounded with curly braces to customize your output (e.g. `{worldName}`):
+
+If using `Custom` output format, use these variables surrounded with curly braces to customize your output (
+e.g. `{worldName}`):
 
 | Variable               | Description                                                       | Example           |
 |------------------------|-------------------------------------------------------------------|-------------------|
@@ -34,6 +45,7 @@ If using `Custom` output format, use these variables surrounded with curly brace
 | `houseSizeName`        | The name of the size of the house.                                | Medium            |
 
 Example (Pings output format):
+
 ```
 @{houseSizeName}{districtNameNoSpaces} {wardNum}-{plotNum} ({housePriceMillions}m)
 ```
@@ -41,12 +53,15 @@ Example (Pings output format):
 ## FAQ
 
 ### Does this plugin automatically search for houses for me?
-**No.** It does not automate player actions in any way; it depends on other players' contributions to housing data to send updates on new plots.
 
-If you're contributing, you still have to teleport to each city, open the residential aethernet, and click through each tab manually. Want to contribute?
-Check out *Contributing*, above.
+**No.** It does not automate player actions in any way; it depends on other players' contributions to housing data to
+send updates on new plots.
+
+If you're contributing, you still have to teleport to each city, open the residential aethernet, and click through each
+tab manually. Want to contribute? Check out *Contributing*, above.
 
 ### Why is it named PaissaHouse?
+
 Because it just sits there, silently, watching houses. Like a Paissa house.
 
 ![A Paissa house.](https://img2.finalfantasyxiv.com/accimg2/88/98/8898053ff4d9416da5a1a6a31d280ba42840161a.jpg)
