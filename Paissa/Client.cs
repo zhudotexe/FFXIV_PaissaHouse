@@ -57,7 +57,7 @@ namespace AutoSweep.Paissa {
         ///     Fire and forget a POST request to register the current character's content ID.
         /// </summary>
         public async void Hello() {
-            PlayerCharacter? player = clientState.LocalPlayer;
+            PlayerCharacter player = clientState.LocalPlayer;
             if (player == null)
                 return;
             var charInfo = new Dictionary<string, object> {
@@ -74,8 +74,14 @@ namespace AutoSweep.Paissa {
         /// <summary>
         ///     Fire and forget a POST request for a ward info.
         /// </summary>
-        public async void PostWardInfo(HousingWardInfo wardInfo) {
-            string content = JsonConvert.SerializeObject(wardInfo);
+        public async void PostWardInfo(HousingWardInfo wardInfo, int serverTimestamp) {
+            var data = new Dictionary<string, object> {
+                { "HouseInfoEntries", wardInfo.HouseInfoEntries },
+                { "LandIdent", wardInfo.LandIdent },
+                { "ClientTimestamp", new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() },
+                { "ServerTimestamp", serverTimestamp }
+            };
+            string content = JsonConvert.SerializeObject(data);
             await PostFireAndForget("/wardInfo", content);
         }
 
@@ -101,14 +107,13 @@ namespace AutoSweep.Paissa {
             HttpResponseMessage response = null;
 
             var request = new HttpRequestMessage(HttpMethod.Post, $"{apiBase}{route}") {
-                Content = new StringContent(content, Encoding.UTF8, "application/json"),
-                Headers = {
-                    Authorization = new AuthenticationHeaderValue("Bearer", GenerateJwt())
-                }
+                Content = new StringContent(content, Encoding.UTF8, "application/json")
             };
 
 
             for (var i = 0; i < retries; i++) {
+                // refresh request headers to update jwt generation time
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", GenerateJwt());
                 try {
                     response = await http.SendAsync(request);
                     PluginLog.Debug($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase})");
@@ -123,7 +128,7 @@ namespace AutoSweep.Paissa {
                 }
                 // if our request failed, exponential backoff for 2 * (i + 1) seconds
                 if (i + 1 < retries) {
-                    int toDelay = 2000 * (i + 1);
+                    int toDelay = 2000 * (i + 1) + new Random().Next(500, 1_500);
                     PluginLog.Warning($"Request {i} failed, waiting for {toDelay}ms before retry...");
                     await Task.Delay(toDelay);
                 }
@@ -131,7 +136,8 @@ namespace AutoSweep.Paissa {
 
             if (response == null)
                 chat.PrintError("There was an error connecting to PaissaDB.");
-            else if (!response.IsSuccessStatusCode) chat.PrintError($"There was an error connecting to PaissaDB: {response.ReasonPhrase}");
+            else if (!response.IsSuccessStatusCode)
+                chat.PrintError($"There was an error connecting to PaissaDB: {response.ReasonPhrase}");
         }
 
 

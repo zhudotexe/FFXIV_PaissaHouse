@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using AutoSweep.Paissa;
 using AutoSweep.Structures;
 using Dalamud.Data;
@@ -128,6 +129,7 @@ namespace AutoSweep {
 
         private void OnHousingWardInfo(IntPtr dataPtr) {
             HousingWardInfo wardInfo = HousingWardInfo.Read(dataPtr);
+            int serverTimestamp = Marshal.ReadInt32(dataPtr - 0x8);
             PluginLog.LogDebug($"Got HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber} territory: {wardInfo.LandIdent.TerritoryTypeId}");
 
             // if the current wardinfo is for a different district than the last swept one, print the header
@@ -151,7 +153,7 @@ namespace AutoSweep {
             sweepState.Add(wardInfo);
 
             // post wardinfo to PaissaDB
-            paissaClient.PostWardInfo(wardInfo);
+            paissaClient.PostWardInfo(wardInfo, serverTimestamp);
 
             // if that's all the wards, display the district summary and thanks
             if (sweepState.IsComplete) OnFinishedDistrictSweep(wardInfo);
