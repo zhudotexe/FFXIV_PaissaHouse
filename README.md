@@ -3,6 +3,14 @@
 Looking for that perfect house? PaissaHouse lets you receive notifications when a new plot of land is up for sale on
 your home world, and contribute to PaissaDB when viewing housing wards at a city aetheryte/ferry.
 
+## Installation
+
+PaissaHouse is a Dalamud plugin, and should be installed using [XIVLauncher](https://github.com/goatcorp/FFXIVQuickLauncher). 
+*Installing the plugin using the GitHub Releases tab or by downloading the code is not recommended or supported.*
+
+If PaissaHouse does not appear under the list of available plugins, ensure that plugin testing is enabled in your plugins
+settings menu.
+
 ## Usage
 
 Simply install and it will happily run in the background, notifying you when a new plot of land is up for sale on your
