@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -9,6 +10,7 @@ using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Gui;
 using Dalamud.Logging;
+using DebounceThrottle;
 using JWT;
 using JWT.Algorithms;
 using JWT.Serializers;
@@ -25,6 +27,10 @@ namespace AutoSweep.Paissa {
         // dalamud
         private readonly ClientState clientState;
         private readonly ChatGui chat;
+
+        // ingest debounce
+        private readonly DebounceDispatcher ingestDebounceDispatcher = new DebounceDispatcher(1200);
+        private readonly ArrayList ingestDataQueue = new ArrayList();
 
 #if DEBUG
         private const string apiBase = "http://127.0.0.1:8000";
@@ -52,11 +58,11 @@ namespace AutoSweep.Paissa {
             Task.Run(() => ws?.Close(1000));
         }
 
-        // ==== HTTP ====
+        // ==== Interface ====
         /// <summary>
         ///     Fire and forget a POST request to register the current character's content ID.
         /// </summary>
-        public async void Hello() {
+        public void Hello() {
             PlayerCharacter player = clientState.LocalPlayer;
             if (player == null)
                 return;
@@ -68,28 +74,28 @@ namespace AutoSweep.Paissa {
             };
             string content = JsonConvert.SerializeObject(charInfo);
             PluginLog.Debug(content);
-            await PostFireAndForget("/hello", content);
+            PostFireAndForget("/hello", content);
         }
 
         /// <summary>
         ///     Fire and forget a POST request for a ward info.
         /// </summary>
-        public async void PostWardInfo(HousingWardInfo wardInfo, int serverTimestamp) {
+        public void PostWardInfo(HousingWardInfo wardInfo, int serverTimestamp) {
             var data = new Dictionary<string, object> {
+                { "event_type", "HOUSING_WARD_INFO" },
+                { "client_timestamp", new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() },
+                { "server_timestamp", serverTimestamp },
                 { "HouseInfoEntries", wardInfo.HouseInfoEntries },
                 { "LandIdent", wardInfo.LandIdent },
-                { "ClientTimestamp", new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() },
-                { "ServerTimestamp", serverTimestamp }
             };
-            string content = JsonConvert.SerializeObject(data);
-            await PostFireAndForget("/wardInfo", content);
+            queueIngest(data);
         }
 
         /// <summary>
         ///     Get the district detail for a given district on a given world.
         /// </summary>
         /// <param name="worldId">The ID of the world</param>
-        /// <param name="districtId">The ID of the district (339=Mist, 340=LB, 341=Gob, 641=Shiro)</param>
+        /// <param name="districtId">The ID of the district (339=Mist, 340=LB, 341=Gob, 641=Shiro, 979=Empy)</param>
         /// <returns>The DistrictDetail</returns>
         public async Task<DistrictDetail> GetDistrictDetailAsync(short worldId, short districtId) {
             HttpResponseMessage response = await http.GetAsync($"{apiBase}/worlds/{worldId}/{districtId}");
@@ -99,7 +105,18 @@ namespace AutoSweep.Paissa {
             return JsonConvert.DeserializeObject<DistrictDetail>(respText);
         }
 
-        private async Task PostFireAndForget(string route, string content) {
+        // ==== HTTP ====
+        private void queueIngest(object data) {
+            ingestDataQueue.Add(data);
+            ingestDebounceDispatcher.Debounce(() => {
+                string bulkIngestData = JsonConvert.SerializeObject(ingestDataQueue);
+                PostFireAndForget("/ingest", bulkIngestData);
+                PluginLog.Debug($"Bulk ingesting {ingestDataQueue.Count} entries ({bulkIngestData.Length}B)");
+                ingestDataQueue.Clear();
+            });
+        }
+
+        private async void PostFireAndForget(string route, string content) {
             await PostFireAndForget(route, content, 5);
         }
 
