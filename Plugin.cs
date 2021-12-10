@@ -189,7 +189,7 @@ namespace AutoSweep {
                 case 641:
                     districtNotifs = configuration.Shirogane;
                     break;
-                case 886:
+                case 979:
                     districtNotifs = configuration.Empyrean;
                     break;
                 default:
@@ -273,7 +273,7 @@ namespace AutoSweep {
         private static uint TerritoryTypeIdToLandSetId(uint territoryTypeId) {
             return territoryTypeId switch {
                 641 => 3, // shirogane
-                886 => 4, // empyreum
+                979 => 4, // empyreum
                 _ => territoryTypeId - 339 // mist, lb, gob are 339-341
             };
         }

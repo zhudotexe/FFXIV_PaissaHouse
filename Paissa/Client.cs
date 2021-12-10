@@ -134,6 +134,7 @@ namespace AutoSweep.Paissa {
                 }
             }
 
+            // todo better error handling
             if (response == null)
                 chat.PrintError("There was an error connecting to PaissaDB.");
             else if (!response.IsSuccessStatusCode)

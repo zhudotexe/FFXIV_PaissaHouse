@@ -14,7 +14,7 @@
         <DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <AssemblyName>autoSweep</AssemblyName>
-        <AssemblyVersion>1.1.1.0</AssemblyVersion>
+        <AssemblyVersion>1.1.2.0</AssemblyVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -64,7 +64,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DalamudPackager" Version="2.1.2"/>
+        <PackageReference Include="DalamudPackager" Version="2.1.3"/>
         <PackageReference Include="ILRepack" Version="2.0.18"/>
         <PackageReference Include="JWT" Version="8.2.3"/>
         <PackageReference Include="WebSocketSharp.Standard" Version="1.0.3"/>
@@ -83,17 +83,18 @@
             <InputAssemblies Include="$(TargetDir)*.dll" Exclude="$(TargetPath)"/>
         </ItemGroup>
         <Exec Command="$(PkgILRepack)\tools\ILRepack.exe /union /lib:$(DalamudLibPath) /out:$(TargetDir)$(TargetFileName) @(InputAssemblies, ' ')"/>
-        <MakeDir Directories="$(TargetDir)out\"/>
-        <Exec Command="copy $(TargetDir)$(TargetFileName) $(TargetDir)out\$(TargetFileName)"/>
     </Target>
 
     <Target Name="PostBuild_Debug" AfterTargets="PostBuild" Condition="'$(Configuration)' == 'Debug'">
-        <Exec Command="if not exist $(AppData)\XIVLauncher\devPlugins\$(TargetName) (mkdir $(AppData)\XIVLauncher\devPlugins\$(TargetName))"/>
-        <Exec Command="copy $(TargetDir)out\$(TargetFileName) $(AppData)\XIVLauncher\devPlugins\$(TargetName)\$(TargetFileName)"/>
-        <Exec Command="copy $(TargetDir)*.pdb $(AppData)\XIVLauncher\devPlugins\$(TargetName)"/>
+        <ItemGroup>
+            <CleanAssemblies Include="$(TargetDir)*.dll" Exclude="$(TargetDir)$(TargetFileName)"/>
+        </ItemGroup>
+        <Delete Files="@(CleanAssemblies)"/>
     </Target>
 
     <Target Name="PostBuild_Release" AfterTargets="PostBuild" Condition=" '$(Configuration)' == 'Release' ">
+        <MakeDir Directories="$(TargetDir)out\"/>
+        <Exec Command="copy $(TargetDir)$(TargetFileName) $(TargetDir)out\$(TargetFileName)"/>
         <ItemGroup>
             <DeleteFiles Include="$(TargetDir)out\*.dll" Exclude="$(TargetDir)out\$(TargetFileName)"/>
         </ItemGroup>

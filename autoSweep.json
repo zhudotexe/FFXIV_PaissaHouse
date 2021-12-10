@@ -9,6 +9,6 @@
   ],
   "ImageUrls": [],
   "Punchline": "Chat alerts for player housing.",
-  "Changelog": "Improved the retry and error handling logic.",
-  "DalamudApiLevel": 4
+  "Changelog": "Updated for Endwalker.",
+  "DalamudApiLevel": 5
 }
