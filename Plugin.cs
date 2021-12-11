@@ -213,7 +213,7 @@ namespace AutoSweep {
             }
             // do the notification
             if (!notifEnabled) return;
-            OnFoundOpenHouse(e.PlotDetail.world_id, e.PlotDetail.district_id, e.PlotDetail.ward_number, e.PlotDetail.plot_number, e.PlotDetail.known_price,
+            OnFoundOpenHouse(e.PlotDetail.world_id, e.PlotDetail.district_id, e.PlotDetail.ward_number, e.PlotDetail.plot_number, e.PlotDetail.last_seen_price,
                 $"New plot up for sale on {eventWorld?.Name}: ");
         }
 
