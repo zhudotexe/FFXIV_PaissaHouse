@@ -29,7 +29,7 @@ jobs:
 
       - name: Setup Secrets
         run: |
-          echo ${{ secrets.SECRETS_CS }} > filename.txt
+          echo '${{ secrets.SECRETS_CS }}' > filename.txt
 
       - name: Build
         run: |
