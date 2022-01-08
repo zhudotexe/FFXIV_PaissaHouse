@@ -7,8 +7,7 @@
   "Tags": [
     "housing"
   ],
-  "ImageUrls": [],
+  "IconUrl": "https://raw.githubusercontent.com/zhudotexe/FFXIV_PaissaHouse/main/images/icon.png",
   "Punchline": "Chat alerts for player housing.",
-  "Changelog": "Updated for Endwalker.",
   "DalamudApiLevel": 5
 }

@@ -102,7 +102,7 @@
         <Delete Files="@(DeleteFiles)"/>
         <DalamudPackager ProjectDir="$(ProjectDir)" OutputPath="$(OutputPath)out\" AssemblyName="$(AssemblyName)" VersionComponents="4" MakeZip="true"/>
         <MakeDir Directories="$(TargetDir)out\$(AssemblyName)\images"/>
-        <!--        <Exec Command="copy $(ProjectDir)\images\*.png $(TargetDir)out\$(AssemblyName)\images\*.png" />-->
+        <Exec Command="copy $(ProjectDir)\images\*.png $(TargetDir)out\$(AssemblyName)\images\*.png"/>
     </Target>
 
 </Project>
