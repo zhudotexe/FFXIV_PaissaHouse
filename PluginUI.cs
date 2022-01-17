@@ -76,7 +76,6 @@ namespace AutoSweep {
                         bool allNotifs = configuration.AllNotifs;
                         if (ImGui.Checkbox("Notifications: All", ref allNotifs)) configuration.AllNotifs = allNotifs;
                         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Whether or not to receive notifications about all new plots for sale, regardless of world or data center.");
-                        ImGui.EndTabItem();
 
                         // chat type
                         XivChatType outputChatType = configuration.ChatType;
@@ -90,6 +89,8 @@ namespace AutoSweep {
                             }
                             ImGui.EndCombo();
                         }
+                        
+                        ImGui.EndTabItem();
                     }
                     DrawTabItemForDistrict("Mist", configuration.Mist);
                     DrawTabItemForDistrict("The Lavender Beds", configuration.LavenderBeds);
