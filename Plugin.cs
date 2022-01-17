@@ -93,7 +93,6 @@ namespace AutoSweep {
             clientState.Login -= OnLogin;
             commands.RemoveHandler(commandName);
             paissaClient?.Dispose();
-            pi.Dispose();
         }
 
         // ==== dalamud events ====
