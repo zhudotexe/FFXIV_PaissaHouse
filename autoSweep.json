@@ -9,5 +9,5 @@
   ],
   "IconUrl": "https://raw.githubusercontent.com/zhudotexe/FFXIV_PaissaHouse/main/images/icon.png",
   "Punchline": "Chat alerts for player housing.",
-  "DalamudApiLevel": 5
+  "DalamudApiLevel": 6
 }

@@ -33,4 +33,15 @@ namespace AutoSweep.Structures {
         HouseBuilt = 1 << 3,
         OwnedByFC = 1 << 4
     }
+
+    public enum PurchaseType : byte {
+        FCFS = 1,
+        Lottery = 2
+    }
+
+    [Flags]
+    public enum TenantFlags : byte {
+        FreeCompany = 1,
+        Personal = 2
+    }
 }

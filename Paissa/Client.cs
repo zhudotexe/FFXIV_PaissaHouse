@@ -87,6 +87,8 @@ namespace AutoSweep.Paissa {
                 { "server_timestamp", serverTimestamp },
                 { "HouseInfoEntries", wardInfo.HouseInfoEntries },
                 { "LandIdent", wardInfo.LandIdent },
+                { "PurchaseType", wardInfo.PurchaseType },
+                { "TenantFlags", wardInfo.TenantFlags }
             };
             queueIngest(data);
         }

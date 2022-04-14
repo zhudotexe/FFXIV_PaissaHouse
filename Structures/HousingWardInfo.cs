@@ -6,10 +6,12 @@ namespace AutoSweep.Structures {
     public class HousingWardInfo {
         public HouseInfoEntry[] HouseInfoEntries;
         public LandIdent LandIdent;
+        public PurchaseType PurchaseType;
+        public TenantFlags TenantFlags;
 
         public static unsafe HousingWardInfo Read(IntPtr dataPtr) {
             var wardInfo = new HousingWardInfo();
-            using (var unmanagedMemoryStream = new UnmanagedMemoryStream((byte*)dataPtr.ToPointer(), 2656L)) {
+            using (var unmanagedMemoryStream = new UnmanagedMemoryStream((byte*)dataPtr.ToPointer(), 2664L)) {
                 using (var binaryReader = new BinaryReader(unmanagedMemoryStream)) {
                     wardInfo.LandIdent = LandIdent.ReadFromBinaryReader(binaryReader);
                     wardInfo.HouseInfoEntries = new HouseInfoEntry[60];
@@ -27,6 +29,16 @@ namespace AutoSweep.Structures {
                         if ((infoEntry.InfoFlags & HousingFlags.PlotOwned) == 0)
                             infoEntry.EstateOwnerName = "";
                     }
+
+                    // 0x2440
+                    wardInfo.PurchaseType = (PurchaseType)binaryReader.ReadByte();
+                    // 0x2441 - padding byte?
+                    binaryReader.ReadByte();
+                    // 0x2442
+                    wardInfo.TenantFlags = (TenantFlags)binaryReader.ReadByte();
+                    // 0x2443 - padding byte?
+                    binaryReader.ReadByte();
+                    // 0x2444 - 0x2447 appear to be padding bytes
                 }
             }
             return wardInfo;
