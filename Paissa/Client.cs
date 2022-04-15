@@ -94,6 +94,27 @@ namespace AutoSweep.Paissa {
         }
 
         /// <summary>
+        ///     Fire and forget a POST request for a placard's lottery info.
+        /// </summary>
+        public void PostLotteryInfo(uint worldId, HousingRequest housingRequest, PlacardSaleInfo saleInfo) {
+            var data = new Dictionary<string, object> {
+                { "event_type", "LOTTERY_INFO" },
+                { "client_timestamp", new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() },
+                { "server_timestamp", saleInfo.ServerTimestamp },
+                { "WorldId", worldId },
+                { "DistrictId", housingRequest.TerritoryTypeId },
+                { "WardId", housingRequest.WardId },
+                { "PlotId", housingRequest.PlotId },
+                { "PurchaseType", saleInfo.PurchaseType },
+                { "TenantFlags", saleInfo.TenantFlags },
+                { "AvailabilityType", saleInfo.AvailabilityType },
+                { "AcceptingEntriesUntil", saleInfo.AcceptingEntriesUntil },
+                { "EntryCount", saleInfo.EntryCount }
+            };
+            queueIngest(data);
+        }
+
+        /// <summary>
         ///     Get the district detail for a given district on a given world.
         /// </summary>
         /// <param name="worldId">The ID of the world</param>
@@ -125,14 +146,13 @@ namespace AutoSweep.Paissa {
         private async Task PostFireAndForget(string route, string content, ushort retries) {
             HttpResponseMessage response = null;
 
-            var request = new HttpRequestMessage(HttpMethod.Post, $"{apiBase}{route}") {
-                Content = new StringContent(content, Encoding.UTF8, "application/json")
-            };
-
-
             for (var i = 0; i < retries; i++) {
-                // refresh request headers to update jwt generation time
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", GenerateJwt());
+                var request = new HttpRequestMessage(HttpMethod.Post, $"{apiBase}{route}") {
+                    Content = new StringContent(content, Encoding.UTF8, "application/json"),
+                    Headers = {
+                        Authorization = new AuthenticationHeaderValue("Bearer", GenerateJwt())
+                    }
+                };
                 try {
                     response = await http.SendAsync(request);
                     PluginLog.Debug($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase})");

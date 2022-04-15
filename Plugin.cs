@@ -19,27 +19,24 @@ namespace AutoSweep {
     public class Plugin : IDalamudPlugin {
         public string Name => "PaissaHouse";
 
-        // configuration constants
-        private const string commandName = "/psweep";
-        private const int numWardsPerDistrict = 24;
-
         // frameworks/data
-        private readonly DalamudPluginInterface pi;
-        private readonly ChatGui chat;
-        private readonly ClientState clientState;
-        private readonly CommandManager commands;
-        private readonly Configuration configuration;
-        private readonly DataManager data;
-        private readonly Framework framework;
-        private readonly ExcelSheet<HousingLandSet> housingLandSets;
-        private readonly GameNetwork network;
-        private readonly PaissaClient paissaClient;
+        internal readonly ChatGui Chat;
+        internal readonly ClientState ClientState;
+        internal readonly CommandManager Commands;
+        internal readonly Configuration Configuration;
+        internal readonly DataManager Data;
+        internal readonly Framework Framework;
+        internal readonly GameNetwork Network;
+        internal readonly PaissaClient PaissaClient;
+
+        internal readonly ExcelSheet<HousingLandSet> HousingLandSets;
+        internal readonly ExcelSheet<TerritoryType> Territories;
+        internal readonly ExcelSheet<World> Worlds;
 
         // state
-        private readonly SweepState sweepState;
-        private readonly ExcelSheet<TerritoryType> territories;
+        private readonly WardObserver wardObserver;
+        private readonly LotteryObserver lotteryObserver;
         private readonly PluginUI ui;
-        private readonly ExcelSheet<World> worlds;
         private bool clientNeedsHello = true;
 
         public Plugin(
@@ -51,24 +48,23 @@ namespace AutoSweep {
             ClientState clientState,
             Framework framework
         ) {
-            this.pi = pi;
-            this.chat = chat;
-            this.network = network;
-            this.data = data;
-            this.commands = commands;
-            this.clientState = clientState;
-            this.framework = framework;
+            Chat = chat;
+            Network = network;
+            Data = data;
+            Commands = commands;
+            ClientState = clientState;
+            Framework = framework;
 
             // setup
-            configuration = pi.GetPluginConfig() as Configuration ?? new Configuration();
-            configuration.Initialize(pi);
-            ui = new PluginUI(configuration);
-            territories = data.GetExcelSheet<TerritoryType>();
-            worlds = data.GetExcelSheet<World>();
-            housingLandSets = data.GetExcelSheet<HousingLandSet>();
+            Configuration = pi.GetPluginConfig() as Configuration ?? new Configuration();
+            Configuration.Initialize(pi);
+            ui = new PluginUI(Configuration);
+            Territories = data.GetExcelSheet<TerritoryType>();
+            Worlds = data.GetExcelSheet<World>();
+            HousingLandSets = data.GetExcelSheet<HousingLandSet>();
 
-            commands.AddHandler(commandName, new CommandInfo(OnCommand) {
-                HelpMessage = $"Configure PaissaHouse settings.\n\"{commandName} reset\" to reset a sweep if sweeping the same district multiple times in a row."
+            commands.AddHandler(Utils.CommandName, new CommandInfo(OnCommand) {
+                HelpMessage = $"Configure PaissaHouse settings.\n\"{Utils.CommandName} reset\" to reset a sweep if sweeping the same district multiple times in a row."
             });
 
             // event hooks
@@ -79,28 +75,29 @@ namespace AutoSweep {
             clientState.Login += OnLogin;
 
             // paissa setup
-            sweepState = new SweepState(numWardsPerDistrict);
-            paissaClient = new PaissaClient(clientState, chat);
-            paissaClient.OnPlotOpened += OnPlotOpened;
+            wardObserver = new WardObserver(this);
+            lotteryObserver = new LotteryObserver(this);
+            PaissaClient = new PaissaClient(clientState, chat);
+            PaissaClient.OnPlotOpened += OnPlotOpened;
 
-            PluginLog.LogDebug($"Initialization complete: configVersion={configuration.Version}");
+            PluginLog.LogDebug($"Initialization complete: configVersion={Configuration.Version}");
         }
 
         public void Dispose() {
             ui.Dispose();
-            network.NetworkMessage -= OnNetworkEvent;
-            framework.Update -= OnUpdateEvent;
-            clientState.Login -= OnLogin;
-            commands.RemoveHandler(commandName);
-            paissaClient?.Dispose();
+            Network.NetworkMessage -= OnNetworkEvent;
+            Framework.Update -= OnUpdateEvent;
+            ClientState.Login -= OnLogin;
+            Commands.RemoveHandler(Utils.CommandName);
+            PaissaClient?.Dispose();
         }
 
         // ==== dalamud events ====
         private void OnCommand(string command, string args) {
             switch (args) {
                 case "reset":
-                    sweepState.Reset();
-                    chat.Print("The sweep state has been reset.");
+                    wardObserver.SweepState.Reset();
+                    Chat.Print("The sweep state has been reset.");
                     break;
                 default:
                     ui.SettingsVisible = true;
@@ -113,83 +110,59 @@ namespace AutoSweep {
         }
 
         private void OnUpdateEvent(Framework f) {
-            if (clientNeedsHello && clientState?.LocalPlayer != null && paissaClient != null) {
+            if (clientNeedsHello && ClientState?.LocalPlayer != null && PaissaClient != null) {
                 clientNeedsHello = false;
-                paissaClient.Hello();
+                PaissaClient.Hello();
             }
         }
 
         private void OnNetworkEvent(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction) {
-            if (!configuration.Enabled) return;
-            if (direction != NetworkMessageDirection.ZoneDown) return;
-            if (!data.IsDataReady) return;
-            if (opCode == data.ServerOpCodes["HousingWardInfo"]) OnHousingWardInfo(dataPtr);
+            if (!Configuration.Enabled) return;
+            if (!Data.IsDataReady) return;
+            switch (direction) {
+                case NetworkMessageDirection.ZoneDown when opCode == Data.ServerOpCodes["HousingWardInfo"]:
+                    wardObserver.OnHousingWardInfo(dataPtr);
+                    break;
+                case NetworkMessageDirection.ZoneDown when opCode == Opcodes.PlacardSaleInfo:
+                    lotteryObserver.OnPlacardSaleInfo(dataPtr);
+                    break;
+                case NetworkMessageDirection.ZoneUp when opCode == Opcodes.HousingRequest:
+                    lotteryObserver.OnHousingRequest(dataPtr);
+                    break;
+            }
         }
 
-        private void OnHousingWardInfo(IntPtr dataPtr) {
-            HousingWardInfo wardInfo = HousingWardInfo.Read(dataPtr);
-            int serverTimestamp = Marshal.ReadInt32(dataPtr - 0x8);
-            PluginLog.LogDebug($"Got HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber} territory: {wardInfo.LandIdent.TerritoryTypeId}");
-
-            // if the current wardinfo is for a different district than the last swept one, print the header
-            // or if the last sweep was > 10m ago
-            if (sweepState.ShouldStartNewSweep(wardInfo)) {
-                // reset last sweep info to the current sweep
-                sweepState.StartDistrictSweep(wardInfo);
-
-                SeString districtName = territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId)?.PlaceName.Value?.Name;
-                SeString worldName = worlds.GetRow((uint)wardInfo.LandIdent.WorldId)?.Name;
-                chat.Print($"Began sweep for {districtName} ({worldName})");
-            }
-
-            // if we've seen this ward already, ignore it
-            if (sweepState.Contains(wardInfo)) {
-                PluginLog.LogDebug($"Skipped processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber} because we have seen it already");
-                return;
-            }
-
-            // add the ward to this sweep
-            sweepState.Add(wardInfo);
-
-            // post wardinfo to PaissaDB
-            paissaClient.PostWardInfo(wardInfo, serverTimestamp);
-
-            // if that's all the wards, display the district summary and thanks
-            if (sweepState.IsComplete) OnFinishedDistrictSweep(wardInfo);
-
-            PluginLog.LogDebug($"Done processing HousingWardInfo for ward: {wardInfo.LandIdent.WardNumber}");
-        }
 
         // ==== paissa events ====
         /// <summary>
         ///     Hook to call when a new plot open event is received over the websocket.
         /// </summary>
         private void OnPlotOpened(object sender, PlotOpenedEventArgs e) {
-            if (!configuration.Enabled) return;
+            if (!Configuration.Enabled) return;
             if (e.PlotDetail == null) return;
             // does the config want notifs for this world?
-            World eventWorld = worlds.GetRow(e.PlotDetail.world_id);
-            if (!(configuration.AllNotifs
-                  || configuration.HomeworldNotifs && e.PlotDetail.world_id == clientState.LocalPlayer?.HomeWorld.Id
-                  || configuration.DatacenterNotifs && eventWorld?.DataCenter.Row == clientState.LocalPlayer?.HomeWorld.GameData.DataCenter.Row))
+            World eventWorld = Worlds.GetRow(e.PlotDetail.world_id);
+            if (!(Configuration.AllNotifs
+                  || Configuration.HomeworldNotifs && e.PlotDetail.world_id == ClientState.LocalPlayer?.HomeWorld.Id
+                  || Configuration.DatacenterNotifs && eventWorld?.DataCenter.Row == ClientState.LocalPlayer?.HomeWorld.GameData.DataCenter.Row))
                 return;
             // what about house sizes in this district?
             DistrictNotifConfig districtNotifs;
             switch (e.PlotDetail.district_id) {
                 case 339:
-                    districtNotifs = configuration.Mist;
+                    districtNotifs = Configuration.Mist;
                     break;
                 case 340:
-                    districtNotifs = configuration.LavenderBeds;
+                    districtNotifs = Configuration.LavenderBeds;
                     break;
                 case 341:
-                    districtNotifs = configuration.Goblet;
+                    districtNotifs = Configuration.Goblet;
                     break;
                 case 641:
-                    districtNotifs = configuration.Shirogane;
+                    districtNotifs = Configuration.Shirogane;
                     break;
                 case 979:
-                    districtNotifs = configuration.Empyrean;
+                    districtNotifs = Configuration.Empyrean;
                     break;
                 default:
                     PluginLog.Warning($"Unknown district in plot open event: {e.PlotDetail.district_id}");
@@ -216,28 +189,16 @@ namespace AutoSweep {
                 $"New plot up for sale on {eventWorld?.Name}: ");
         }
 
-        /// <summary>
-        ///     Called each time the user finishes sweeping a full district, with the wardinfo as the last ward swept.
-        /// </summary>
-        private void OnFinishedDistrictSweep(HousingWardInfo housingWardInfo) {
-            SeString districtName = territories.GetRow((uint)sweepState.DistrictId)?.PlaceName.Value?.Name;
-
-            chat.Print($"Swept all {numWardsPerDistrict} wards. Thank you for your contribution!");
-            chat.Print($"Here's a summary of open plots in {districtName}:");
-            chat.Print($"{districtName}: {sweepState.OpenHouses.Count} open plots.");
-            foreach (OpenHouse openHouse in sweepState.OpenHouses)
-                OnFoundOpenHouse((uint)sweepState.WorldId, (uint)sweepState.DistrictId, openHouse.WardNum, openHouse.PlotNum, openHouse.HouseInfoEntry.HousePrice);
-        }
 
         /// <summary>
         ///     Display the details of an open plot in the user's preferred format.
         /// </summary>
-        private void OnFoundOpenHouse(uint worldId, uint territoryTypeId, int wardNumber, int plotNumber, uint? price, string messagePrefix = "") {
-            PlaceName place = territories.GetRow(territoryTypeId)?.PlaceName.Value;
+        internal void OnFoundOpenHouse(uint worldId, uint territoryTypeId, int wardNumber, int plotNumber, uint? price, string messagePrefix = "") {
+            PlaceName place = Territories.GetRow(territoryTypeId)?.PlaceName.Value;
             SeString districtName = place?.NameNoArticle.RawString.Length > 0 ? place.NameNoArticle : place?.Name; // languages like German do not use NameNoArticle (#2)
-            SeString worldName = worlds.GetRow(worldId)?.Name;
+            SeString worldName = Worlds.GetRow(worldId)?.Name;
 
-            HousingLandSet landSet = housingLandSets.GetRow(TerritoryTypeIdToLandSetId(territoryTypeId));
+            HousingLandSet landSet = HousingLandSets.GetRow(Utils.TerritoryTypeIdToLandSetId(territoryTypeId));
             byte? houseSize = landSet?.PlotSize[plotNumber];
             uint realPrice = price.GetValueOrDefault(landSet?.InitialPrice[plotNumber] ?? 0); // if price is null, it's probably the default price (landupdate)
 
@@ -252,13 +213,13 @@ namespace AutoSweep {
             };
 
             string output;
-            switch (configuration.OutputFormat) {
+            switch (Configuration.OutputFormat) {
                 case OutputFormat.Pings:
                     output = $"{messagePrefix}@{houseSizeName}{districtNameNoSpaces} {wardNum}-{plotNum} ({housePriceMillions:F3}m)";
                     break;
                 case OutputFormat.Custom:
-                    var template = $"{messagePrefix}{configuration.OutputFormatString}";
-                    output = FormatCustomOutputString(template, districtName?.ToString(), districtNameNoSpaces, worldName, wardNum.ToString(),
+                    var template = $"{messagePrefix}{Configuration.OutputFormatString}";
+                    output = Utils.FormatCustomOutputString(template, districtName?.ToString(), districtNameNoSpaces, worldName, wardNum.ToString(),
                         plotNum.ToString(), realPrice.ToString(), housePriceMillions.ToString("F3"), houseSizeName);
                     break;
                 default:
@@ -269,42 +230,11 @@ namespace AutoSweep {
         }
 
         // ==== helpers ====
-        private static uint TerritoryTypeIdToLandSetId(uint territoryTypeId) {
-            return territoryTypeId switch {
-                641 => 3, // shirogane
-                979 => 4, // empyreum
-                _ => territoryTypeId - 339 // mist, lb, gob are 339-341
-            };
-        }
-
-        private static string FormatCustomOutputString(
-            string template,
-            string districtName,
-            string districtNameNoSpaces,
-            string worldName,
-            string wardNum,
-            string plotNum,
-            string housePrice,
-            string housePriceMillions,
-            string houseSizeName
-        ) {
-            // mildly disgusting
-            // why can't we have nice things like python :(
-            return template.Replace("{districtName}", districtName)
-                .Replace("{districtNameNoSpaces}", districtNameNoSpaces)
-                .Replace("{worldName}", worldName)
-                .Replace("{wardNum}", wardNum)
-                .Replace("{plotNum}", plotNum)
-                .Replace("{housePrice}", housePrice)
-                .Replace("{housePriceMillions}", housePriceMillions)
-                .Replace("{houseSizeName}", houseSizeName);
-        }
-
         private void SendChatToConfiguredChannel(string message) {
-            chat.PrintChat(new XivChatEntry {
+            Chat.PrintChat(new XivChatEntry {
                 Name = "[PaissaHouse]",
                 Message = message,
-                Type = configuration.ChatType
+                Type = Configuration.ChatType
             });
         }
 
