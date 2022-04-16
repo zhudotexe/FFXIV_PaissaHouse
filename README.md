@@ -5,11 +5,12 @@ your home world, and contribute to PaissaDB when viewing housing wards at a city
 
 ## Installation
 
-PaissaHouse is a Dalamud plugin, and should be installed using [XIVLauncher](https://github.com/goatcorp/FFXIVQuickLauncher). 
+PaissaHouse is a Dalamud plugin, and should be installed
+using [XIVLauncher](https://github.com/goatcorp/FFXIVQuickLauncher).
 *Installing the plugin using the GitHub Releases tab or by downloading the code is not recommended or supported.*
 
-If PaissaHouse does not appear under the list of available plugins, ensure that plugin testing is enabled in your plugins
-settings menu.
+If PaissaHouse does not appear under the list of available plugins, ensure that plugin testing is enabled in your
+plugins settings menu.
 
 ## Usage
 
@@ -21,9 +22,13 @@ districts.
 
 ## Contributing
 
-PaissaHouse relies on data contributions from players like you to broadcast the latest housing data. To contribute data
-to PaissaDB, the API powering PaissaHouse, simply teleport to a major city aetheryte, select "Residential District
-Aethernet" -> "Go to Specified Ward (Review Tabs)" and click through the 24 wards. This is called "sweeping" a district.
+PaissaHouse relies on data contributions from players like you to broadcast the latest housing data.
+
+### Ward Sweeps
+
+To contribute data to PaissaDB, the API powering PaissaHouse, simply teleport to a major city aetheryte, select
+"Residential District Aethernet" -> "Go to Specified Ward (Review Tabs)" and click through the 24 wards. This is
+called "sweeping" a district.
 
 If all goes well, you'll see any new plots you found pop up in real time, and a summary of the district once you've
 clicked through the wards!
@@ -35,6 +40,12 @@ clicked through the wards!
 
 If you plan on sweeping the same district multiple times in a row, run `/psweep reset` between each sweep to reset the
 internal sweep cache.
+
+### Lottery Sweeps
+
+To contribute information about a plot on sale via lottery, simply view the plot's placard by teleporting to the ward,
+walking up to the plot, and right-clicking on the placard. This will help ensure that we have up-to-date lottery counts
+for each plot!
 
 ## Custom Output Format
 
