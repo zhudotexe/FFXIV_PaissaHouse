@@ -1,5 +1,6 @@
 ﻿using System;
 using AutoSweep.Paissa;
+using AutoSweep.Structures;
 using Dalamud.Data;
 using Dalamud.Game;
 using Dalamud.Game.ClientState;
@@ -80,6 +81,7 @@ namespace AutoSweep {
             lotteryObserver = new LotteryObserver(this);
             PaissaClient = new PaissaClient(clientState, chat);
             PaissaClient.OnPlotOpened += OnPlotOpened;
+            PaissaClient.OnPlotUpdate += OnPlotUpdate;
 
             PluginLog.LogDebug($"Initialization complete: configVersion={Configuration.Version}");
         }
@@ -131,55 +133,27 @@ namespace AutoSweep {
         ///     Hook to call when a new plot open event is received over the websocket.
         /// </summary>
         private void OnPlotOpened(object sender, PlotOpenedEventArgs e) {
-            if (!Configuration.Enabled) return;
             if (e.PlotDetail == null) return;
-            // does the config want notifs for this world?
-            World eventWorld = Worlds.GetRow(e.PlotDetail.world_id);
-            if (!(Configuration.AllNotifs
-                  || Configuration.HomeworldNotifs && e.PlotDetail.world_id == ClientState.LocalPlayer?.HomeWorld.Id
-                  || Configuration.DatacenterNotifs && eventWorld?.DataCenter.Row == ClientState.LocalPlayer?.HomeWorld.GameData.DataCenter.Row))
-                return;
-            // what about house sizes in this district?
-            DistrictNotifConfig districtNotifs;
-            switch (e.PlotDetail.district_id) {
-                case 339:
-                    districtNotifs = Configuration.Mist;
-                    break;
-                case 340:
-                    districtNotifs = Configuration.LavenderBeds;
-                    break;
-                case 341:
-                    districtNotifs = Configuration.Goblet;
-                    break;
-                case 641:
-                    districtNotifs = Configuration.Shirogane;
-                    break;
-                case 979:
-                    districtNotifs = Configuration.Empyrean;
-                    break;
-                default:
-                    PluginLog.Warning($"Unknown district in plot open event: {e.PlotDetail.district_id}");
-                    return;
-            }
-            bool notifEnabled;
-            switch (e.PlotDetail.size) {
-                case 0:
-                    notifEnabled = districtNotifs.Small;
-                    break;
-                case 1:
-                    notifEnabled = districtNotifs.Medium;
-                    break;
-                case 2:
-                    notifEnabled = districtNotifs.Large;
-                    break;
-                default:
-                    PluginLog.Warning($"Unknown plot size in plot open event: {e.PlotDetail.size}");
-                    return;
-            }
-            // do the notification
+            bool notifEnabled = Utils.ConfigEnabledForPlot(this, e.PlotDetail.world_id, e.PlotDetail.district_id, e.PlotDetail.size);
             if (!notifEnabled) return;
-            OnFoundOpenHouse(e.PlotDetail.world_id, e.PlotDetail.district_id, e.PlotDetail.ward_number, e.PlotDetail.plot_number, e.PlotDetail.last_seen_price,
-                $"New plot up for sale on {eventWorld?.Name}: ");
+            // we only notify on PlotOpen if the purchase type is FCFS or we know it is available
+            if (!((e.PlotDetail.purchase_system & PurchaseSystem.Lottery) == 0 || e.PlotDetail.lotto_phase == AvailabilityType.Available)) return;
+            World eventWorld = Worlds.GetRow(e.PlotDetail.world_id);
+            OnFoundOpenHouse(e.PlotDetail.world_id, e.PlotDetail.district_id, e.PlotDetail.ward_number, e.PlotDetail.plot_number, e.PlotDetail.price,
+                $"New plot available for purchase on {eventWorld?.Name}: ");
+        }
+
+        private void OnPlotUpdate(object sender, PlotUpdateEventArgs e) {
+            if (e.PlotUpdate == null) return;
+            bool notifEnabled = Utils.ConfigEnabledForPlot(this, e.PlotUpdate.world_id, e.PlotUpdate.district_id, e.PlotUpdate.size);
+            if (!notifEnabled) return;
+            // we only notify on PlotUpdate if the purchase type is lottery and it is available now and was not before
+            if (!((e.PlotUpdate.purchase_system & PurchaseSystem.Lottery) == PurchaseSystem.Lottery
+                  && e.PlotUpdate.previous_lotto_phase != AvailabilityType.Available
+                  && e.PlotUpdate.lotto_phase == AvailabilityType.Available)) return;
+            World eventWorld = Worlds.GetRow(e.PlotUpdate.world_id);
+            OnFoundOpenHouse(e.PlotUpdate.world_id, e.PlotUpdate.district_id, e.PlotUpdate.ward_number, e.PlotUpdate.plot_number, e.PlotUpdate.price,
+                $"New plot available for purchase on {eventWorld?.Name}: ");
         }
 
 

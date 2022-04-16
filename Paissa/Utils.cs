@@ -1,3 +1,7 @@
+using Dalamud.Game.ClientState;
+using Dalamud.Logging;
+using Lumina.Excel.GeneratedSheets;
+
 namespace AutoSweep.Paissa {
     public class Utils {
         // configuration constants
@@ -33,6 +37,54 @@ namespace AutoSweep.Paissa {
                 .Replace("{housePrice}", housePrice)
                 .Replace("{housePriceMillions}", housePriceMillions)
                 .Replace("{houseSizeName}", houseSizeName);
+        }
+
+        public static bool ConfigEnabledForPlot(Plugin plugin, ushort worldId, ushort districtId, ushort size) {
+            if (!plugin.Configuration.Enabled) return false;
+            // does the config want notifs for this world?
+            World eventWorld = plugin.Worlds.GetRow(worldId);
+            if (!(plugin.Configuration.AllNotifs
+                  || plugin.Configuration.HomeworldNotifs && worldId == plugin.ClientState.LocalPlayer?.HomeWorld.Id
+                  || plugin.Configuration.DatacenterNotifs && eventWorld?.DataCenter.Row == plugin.ClientState.LocalPlayer?.HomeWorld.GameData.DataCenter.Row))
+                return false;
+            // what about house sizes in this district?
+            DistrictNotifConfig districtNotifs;
+            switch (districtId) {
+                case 339:
+                    districtNotifs = plugin.Configuration.Mist;
+                    break;
+                case 340:
+                    districtNotifs = plugin.Configuration.LavenderBeds;
+                    break;
+                case 341:
+                    districtNotifs = plugin.Configuration.Goblet;
+                    break;
+                case 641:
+                    districtNotifs = plugin.Configuration.Shirogane;
+                    break;
+                case 979:
+                    districtNotifs = plugin.Configuration.Empyrean;
+                    break;
+                default:
+                    PluginLog.Warning($"Unknown district in plot open event: {districtId}");
+                    return false;
+            }
+            bool notifEnabled;
+            switch (size) {
+                case 0:
+                    notifEnabled = districtNotifs.Small;
+                    break;
+                case 1:
+                    notifEnabled = districtNotifs.Medium;
+                    break;
+                case 2:
+                    notifEnabled = districtNotifs.Large;
+                    break;
+                default:
+                    PluginLog.Warning($"Unknown plot size in plot open event: {size}");
+                    return false;
+            }
+            return notifEnabled;
         }
     }
 }

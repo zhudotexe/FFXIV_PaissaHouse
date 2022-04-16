@@ -9,6 +9,14 @@ namespace AutoSweep.Paissa {
         public OpenPlotDetail PlotDetail { get; set; }
     }
 
+    public class PlotUpdateEventArgs : EventArgs {
+        public PlotUpdateEventArgs(PlotUpdate plotUpdate) {
+            PlotUpdate = plotUpdate;
+        }
+
+        public PlotUpdate PlotUpdate { get; set; }
+    }
+
     public class PlotSoldEventArgs : EventArgs {
         public PlotSoldEventArgs(SoldPlotDetail plotDetail) {
             PlotDetail = plotDetail;

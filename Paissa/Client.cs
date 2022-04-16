@@ -43,6 +43,7 @@ namespace AutoSweep.Paissa {
         private readonly byte[] secret = Encoding.UTF8.GetBytes(Secrets.JwtSecret);
 
         public event EventHandler<PlotOpenedEventArgs> OnPlotOpened;
+        public event EventHandler<PlotUpdateEventArgs> OnPlotUpdate;
         public event EventHandler<PlotSoldEventArgs> OnPlotSold;
 
         public PaissaClient(ClientState clientState, ChatGui chatGui) {
@@ -205,6 +206,9 @@ namespace AutoSweep.Paissa {
             switch (message.Type) {
                 case "plot_open":
                     OnPlotOpened?.Invoke(this, new PlotOpenedEventArgs(message.Data.ToObject<OpenPlotDetail>()));
+                    break;
+                case "plot_update":
+                    OnPlotUpdate?.Invoke(this, new PlotUpdateEventArgs(message.Data.ToObject<PlotUpdate>()));
                     break;
                 case "plot_sold":
                     OnPlotSold?.Invoke(this, new PlotSoldEventArgs(message.Data.ToObject<SoldPlotDetail>()));
