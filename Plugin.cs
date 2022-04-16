@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using AutoSweep.Paissa;
-using AutoSweep.Structures;
 using Dalamud.Data;
 using Dalamud.Game;
 using Dalamud.Game.ClientState;
@@ -27,6 +25,7 @@ namespace AutoSweep {
         internal readonly DataManager Data;
         internal readonly Framework Framework;
         internal readonly GameNetwork Network;
+        internal readonly GameGui GameGui;
         internal readonly PaissaClient PaissaClient;
 
         internal readonly ExcelSheet<HousingLandSet> HousingLandSets;
@@ -46,7 +45,8 @@ namespace AutoSweep {
             DataManager data,
             CommandManager commands,
             ClientState clientState,
-            Framework framework
+            Framework framework,
+            GameGui gameGui
         ) {
             Chat = chat;
             Network = network;
@@ -54,6 +54,7 @@ namespace AutoSweep {
             Commands = commands;
             ClientState = clientState;
             Framework = framework;
+            GameGui = gameGui;
 
             // setup
             Configuration = pi.GetPluginConfig() as Configuration ?? new Configuration();
@@ -90,6 +91,7 @@ namespace AutoSweep {
             ClientState.Login -= OnLogin;
             Commands.RemoveHandler(Utils.CommandName);
             PaissaClient?.Dispose();
+            lotteryObserver.Dispose();
         }
 
         // ==== dalamud events ====
@@ -118,18 +120,9 @@ namespace AutoSweep {
 
         private void OnNetworkEvent(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction) {
             if (!Configuration.Enabled) return;
+            if (direction != NetworkMessageDirection.ZoneDown) return;
             if (!Data.IsDataReady) return;
-            switch (direction) {
-                case NetworkMessageDirection.ZoneDown when opCode == Data.ServerOpCodes["HousingWardInfo"]:
-                    wardObserver.OnHousingWardInfo(dataPtr);
-                    break;
-                case NetworkMessageDirection.ZoneDown when opCode == Opcodes.PlacardSaleInfo:
-                    lotteryObserver.OnPlacardSaleInfo(dataPtr);
-                    break;
-                case NetworkMessageDirection.ZoneUp when opCode == Opcodes.HousingRequest:
-                    lotteryObserver.OnHousingRequest(dataPtr);
-                    break;
-            }
+            if (opCode == Data.ServerOpCodes["HousingWardInfo"]) wardObserver.OnHousingWardInfo(dataPtr);
         }
 
 

@@ -35,12 +35,12 @@ namespace AutoSweep.Structures {
     }
 
     public enum PurchaseType : byte {
+        Unavailable = 0,
         FCFS = 1,
         Lottery = 2
     }
-
-    [Flags]
-    public enum TenantFlags : byte {
+    
+    public enum TenantType : byte {
         FreeCompany = 1,
         Personal = 2
     }

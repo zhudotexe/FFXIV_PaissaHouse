@@ -1,43 +1,70 @@
 using System;
 using AutoSweep.Structures;
+using Dalamud.Hooking;
 using Dalamud.Logging;
+using Dalamud.Utility.Signatures;
 using Lumina.Excel.GeneratedSheets;
 using Lumina.Text;
 
 namespace AutoSweep.Paissa {
-    public class LotteryObserver {
-        private Plugin plugin;
-        private PlacardSaleInfo lastSeenSaleInfo = null;
+    public unsafe class LotteryObserver {
+        private readonly Plugin plugin;
+
+        private delegate void HandlePlacardSaleInfoDelegate(
+            void* agentBase,
+            byte isUnowned,
+            ushort territoryTypeId,
+            byte wardId,
+            byte plotId,
+            short a6,
+            IntPtr placardSaleInfoPtr,
+            long a8
+        );
+
+        [Signature("E8 ?? ?? ?? ?? 48 8B B4 24 ?? ?? ?? ?? 48 8B 6C 24 ?? E9", DetourName = nameof(OnPlacardSaleInfo))]
+        private Hook<HandlePlacardSaleInfoDelegate>? PlacardSaleInfoHook { get; init; }
 
         public LotteryObserver(Plugin plugin) {
+            SignatureHelper.Initialise(this);
             this.plugin = plugin;
+            PlacardSaleInfoHook?.Enable();
         }
 
-        public void OnPlacardSaleInfo(IntPtr dataPtr) {
-            PlacardSaleInfo saleInfo = PlacardSaleInfo.Read(dataPtr);
+        public void Dispose() {
+            PlacardSaleInfoHook?.Dispose();
+        }
+
+        public void OnPlacardSaleInfo(
+            void* agentBase,
+            byte isUnowned,
+            ushort territoryTypeId,
+            byte wardId,
+            byte plotId,
+            short a6,
+            IntPtr placardSaleInfoPtr,
+            long a8
+        ) {
+            PlacardSaleInfoHook!.Original(agentBase, isUnowned, territoryTypeId, wardId, plotId, a6, placardSaleInfoPtr, a8);
+            
+            // if the plot is owned, ignore it
+            if (isUnowned == 0) return;
+
+            PlacardSaleInfo saleInfo = PlacardSaleInfo.Read(placardSaleInfoPtr);
+
             PluginLog.LogDebug(
-                $"Got PlacardSaleInfo: PurchaseType={saleInfo.PurchaseType}, TenantFlags={saleInfo.TenantFlags}, available={saleInfo.AvailabilityType}, until={saleInfo.AcceptingEntriesUntil}, numEntries={saleInfo.EntryCount}");
+                $"Got PlacardSaleInfo: PurchaseType={saleInfo.PurchaseType}, TenantType={saleInfo.TenantType}, available={saleInfo.AvailabilityType}, until={saleInfo.PhaseEndsAt}, numEntries={saleInfo.EntryCount}");
             PluginLog.LogDebug($"unknown1={saleInfo.Unknown1}, unknown2={saleInfo.Unknown2}, unknown3={BitConverter.ToString(saleInfo.Unknown3)}");
-            lastSeenSaleInfo = saleInfo;
-        }
+            PluginLog.LogDebug($"isUnowned={isUnowned}, territoryTypeId={territoryTypeId}, wardId={wardId}, plotId={plotId}; a6={a6}, a8={a8}");
 
-        public void OnHousingRequest(IntPtr dataPtr) {
-            HousingRequest housingRequest = HousingRequest.Read(dataPtr);
-            if (housingRequest.SubOpcode != SubOpcodes.HousingRequest_GetUnownedHousePlacard) return;
-            PluginLog.LogDebug($"Got RequestUnownedPlacard for {housingRequest.WardId}-{housingRequest.PlotId} (district {housingRequest.TerritoryTypeId})");
-            PluginLog.LogDebug($"unknown1={housingRequest.Unknown1}, unknown2={BitConverter.ToString(housingRequest.Unknown2)}");
-            if (lastSeenSaleInfo is null) return;
-            if (housingRequest.ServerTimestamp - lastSeenSaleInfo.ServerTimestamp > 3) {
-                PluginLog.LogWarning($"High time delta between last seen PlacardSaleInfo and valid HousingRequest, ignoring!");
-                return;
-            }
+            // get information about the world from the clientstate
             World world = plugin.ClientState.LocalPlayer?.CurrentWorld.GameData;
             if (world is null) return;
-            SeString place = plugin.Territories.GetRow(housingRequest.TerritoryTypeId)?.PlaceName.Value?.Name;
+
+            SeString place = plugin.Territories.GetRow(territoryTypeId)?.PlaceName.Value?.Name;
             SeString worldName = world.Name;
-            PluginLog.LogInformation(
-                $"Plot {place} {housingRequest.WardId + 1}-{housingRequest.PlotId + 1} ({worldName}) has {lastSeenSaleInfo.EntryCount} lottery entries as of {lastSeenSaleInfo.ServerTimestamp}.");
-            plugin.PaissaClient.PostLotteryInfo(world.RowId, housingRequest, lastSeenSaleInfo);
+            PluginLog.LogInformation($"Plot {place} {wardId + 1}-{plotId + 1} ({worldName}) has {saleInfo.EntryCount} lottery entries.");
+
+            plugin.PaissaClient.PostLotteryInfo(world.RowId, territoryTypeId, wardId, plotId, saleInfo);
         }
     }
 }

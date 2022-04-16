@@ -7,7 +7,7 @@ namespace AutoSweep.Structures {
         public HouseInfoEntry[] HouseInfoEntries;
         public LandIdent LandIdent;
         public PurchaseType PurchaseType;
-        public TenantFlags TenantFlags;
+        public TenantType TenantType;
 
         public static unsafe HousingWardInfo Read(IntPtr dataPtr) {
             var wardInfo = new HousingWardInfo();
@@ -35,7 +35,7 @@ namespace AutoSweep.Structures {
                     // 0x2441 - padding byte?
                     binaryReader.ReadByte();
                     // 0x2442
-                    wardInfo.TenantFlags = (TenantFlags)binaryReader.ReadByte();
+                    wardInfo.TenantType = (TenantType)binaryReader.ReadByte();
                     // 0x2443 - padding byte?
                     binaryReader.ReadByte();
                     // 0x2444 - 0x2447 appear to be padding bytes

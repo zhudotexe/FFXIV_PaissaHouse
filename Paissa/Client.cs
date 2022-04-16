@@ -88,7 +88,7 @@ namespace AutoSweep.Paissa {
                 { "HouseInfoEntries", wardInfo.HouseInfoEntries },
                 { "LandIdent", wardInfo.LandIdent },
                 { "PurchaseType", wardInfo.PurchaseType },
-                { "TenantFlags", wardInfo.TenantFlags }
+                { "TenantType", wardInfo.TenantType }
             };
             queueIngest(data);
         }
@@ -96,19 +96,18 @@ namespace AutoSweep.Paissa {
         /// <summary>
         ///     Fire and forget a POST request for a placard's lottery info.
         /// </summary>
-        public void PostLotteryInfo(uint worldId, HousingRequest housingRequest, PlacardSaleInfo saleInfo) {
+        public void PostLotteryInfo(uint worldId, ushort districtId, ushort wardId, ushort plotId, PlacardSaleInfo saleInfo) {
             var data = new Dictionary<string, object> {
                 { "event_type", "LOTTERY_INFO" },
                 { "client_timestamp", new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() },
-                { "server_timestamp", saleInfo.ServerTimestamp },
                 { "WorldId", worldId },
-                { "DistrictId", housingRequest.TerritoryTypeId },
-                { "WardId", housingRequest.WardId },
-                { "PlotId", housingRequest.PlotId },
+                { "DistrictId", districtId },
+                { "WardId", wardId },
+                { "PlotId", plotId },
                 { "PurchaseType", saleInfo.PurchaseType },
-                { "TenantFlags", saleInfo.TenantFlags },
+                { "TenantType", saleInfo.TenantType },
                 { "AvailabilityType", saleInfo.AvailabilityType },
-                { "AcceptingEntriesUntil", saleInfo.AcceptingEntriesUntil },
+                { "PhaseEndsAt", saleInfo.PhaseEndsAt },
                 { "EntryCount", saleInfo.EntryCount }
             };
             queueIngest(data);
