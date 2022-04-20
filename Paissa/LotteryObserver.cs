@@ -12,11 +12,11 @@ namespace AutoSweep.Paissa {
 
         private delegate void HandlePlacardSaleInfoDelegate(
             void* agentBase,
-            byte isUnowned,
+            HousingType housingType,
             ushort territoryTypeId,
             byte wardId,
             byte plotId,
-            short a6,
+            short apartmentNumber,
             IntPtr placardSaleInfoPtr,
             long a8
         );
@@ -36,25 +36,27 @@ namespace AutoSweep.Paissa {
 
         public void OnPlacardSaleInfo(
             void* agentBase,
-            byte isUnowned,
+            HousingType housingType,
             ushort territoryTypeId,
             byte wardId,
             byte plotId,
-            short a6,
+            short apartmentNumber,
             IntPtr placardSaleInfoPtr,
             long a8
         ) {
-            PlacardSaleInfoHook!.Original(agentBase, isUnowned, territoryTypeId, wardId, plotId, a6, placardSaleInfoPtr, a8);
-            
+            PlacardSaleInfoHook!.Original(agentBase, housingType, territoryTypeId, wardId, plotId, apartmentNumber, placardSaleInfoPtr, a8);
+
             // if the plot is owned, ignore it
-            if (isUnowned == 0) return;
+            if (housingType != HousingType.UnownedHouse) return;
+            if (placardSaleInfoPtr == IntPtr.Zero) return;
 
             PlacardSaleInfo saleInfo = PlacardSaleInfo.Read(placardSaleInfoPtr);
 
             PluginLog.LogDebug(
                 $"Got PlacardSaleInfo: PurchaseType={saleInfo.PurchaseType}, TenantType={saleInfo.TenantType}, available={saleInfo.AvailabilityType}, until={saleInfo.PhaseEndsAt}, numEntries={saleInfo.EntryCount}");
             PluginLog.LogDebug($"unknown1={saleInfo.Unknown1}, unknown2={saleInfo.Unknown2}, unknown3={BitConverter.ToString(saleInfo.Unknown3)}");
-            PluginLog.LogDebug($"isUnowned={isUnowned}, territoryTypeId={territoryTypeId}, wardId={wardId}, plotId={plotId}; a6={a6}, a8={a8}");
+            PluginLog.LogDebug(
+                $"housingType={housingType}, territoryTypeId={territoryTypeId}, wardId={wardId}, plotId={plotId}, apartmentNumber={apartmentNumber}, placardSaleInfoPtr={placardSaleInfoPtr}, a8={a8}");
 
             // get information about the world from the clientstate
             World world = plugin.ClientState.LocalPlayer?.CurrentWorld.GameData;
@@ -66,5 +68,12 @@ namespace AutoSweep.Paissa {
 
             plugin.PaissaClient.PostLotteryInfo(world.RowId, territoryTypeId, wardId, plotId, saleInfo);
         }
+    }
+
+    public enum HousingType : byte {
+        OwnedHouse = 0,
+        UnownedHouse = 1,
+        FreeCompanyApartment = 2,
+        Apartment = 3
     }
 }
