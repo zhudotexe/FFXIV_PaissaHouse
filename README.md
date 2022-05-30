@@ -1,7 +1,11 @@
 # PaissaHouse
 
+[![Discord](https://img.shields.io/discord/927834873916440646?color=5865F2&label=discord&logo=discord&logoColor=white)](https://discord.gg/9rduk8aDek)
+
 Looking for that perfect house? PaissaHouse lets you receive notifications when a new plot of land is up for sale on
 your home world, and contribute to PaissaDB when viewing housing wards at a city aetheryte/ferry.
+
+You can view the list of all plots available on a world at https://paissadb.zhu.codes/.
 
 ## Installation
 
