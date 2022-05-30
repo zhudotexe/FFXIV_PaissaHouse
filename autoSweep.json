@@ -2,13 +2,13 @@
   "Author": "zhudotexe",
   "Name": "PaissaHouse",
   "InternalName": "autoSweep",
-  "Description": "Looking for that perfect house? PaissaHouse lets you receive notifications when a new plot of land is up for sale on your home world.\n\nWant to contribute? Check out the repository (globe icon below) for instructions.",
+  "Description": "Looking for that perfect house? PaissaHouse lets you receive notifications when a new plot of land is up for sale on your home world.\nView the list of all houses available on a world at https://paissadb.zhu.codes/!\n\nWant to contribute? Check out the repository (globe icon below) for instructions.",
   "RepoUrl": "https://github.com/zhudotexe/FFXIV_PaissaHouse",
   "ApplicableVersion": "any",
   "Tags": [
     "housing"
   ],
   "IconUrl": "https://raw.githubusercontent.com/zhudotexe/FFXIV_PaissaHouse/main/images/icon.png",
-  "Punchline": "Chat alerts for player housing.",
+  "Punchline": "Crowdsourced housing alerts and lottery tracking for all.",
   "DalamudApiLevel": 6
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using AutoSweep.Paissa;
 using AutoSweep.Structures;
 using Dalamud.Data;
@@ -8,17 +9,19 @@ using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
 using Dalamud.Game.Network;
 using Dalamud.Game.Text;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Logging;
 using Dalamud.Plugin;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
-using Lumina.Text;
 
 namespace AutoSweep {
     public class Plugin : IDalamudPlugin {
         public string Name => "PaissaHouse";
 
         // frameworks/data
+        internal readonly DalamudPluginInterface PluginInterface;
         internal readonly ChatGui Chat;
         internal readonly ClientState ClientState;
         internal readonly CommandManager Commands;
@@ -26,12 +29,12 @@ namespace AutoSweep {
         internal readonly DataManager Data;
         internal readonly Framework Framework;
         internal readonly GameNetwork Network;
-        internal readonly GameGui GameGui;
         internal readonly PaissaClient PaissaClient;
 
         internal readonly ExcelSheet<HousingLandSet> HousingLandSets;
         internal readonly ExcelSheet<TerritoryType> Territories;
         internal readonly ExcelSheet<World> Worlds;
+        private readonly DalamudLinkPayload chatLinkPayload;
 
         // state
         private readonly WardObserver wardObserver;
@@ -46,16 +49,15 @@ namespace AutoSweep {
             DataManager data,
             CommandManager commands,
             ClientState clientState,
-            Framework framework,
-            GameGui gameGui
+            Framework framework
         ) {
+            PluginInterface = pi;
             Chat = chat;
             Network = network;
             Data = data;
             Commands = commands;
             ClientState = clientState;
             Framework = framework;
-            GameGui = gameGui;
 
             // setup
             Configuration = pi.GetPluginConfig() as Configuration ?? new Configuration();
@@ -65,9 +67,14 @@ namespace AutoSweep {
             Worlds = data.GetExcelSheet<World>();
             HousingLandSets = data.GetExcelSheet<HousingLandSet>();
 
+            commands.AddHandler(Utils.HouseCommandName, new CommandInfo(OnHouseCommand) {
+                HelpMessage = "View all houses available for sale."
+            });
             commands.AddHandler(Utils.CommandName, new CommandInfo(OnCommand) {
                 HelpMessage = $"Configure PaissaHouse settings.\n\"{Utils.CommandName} reset\" to reset a sweep if sweeping the same district multiple times in a row."
             });
+
+            chatLinkPayload = pi.AddChatLinkHandler(0, OnChatLinkClick);
 
             // event hooks
             network.NetworkMessage += OnNetworkEvent;
@@ -92,11 +99,25 @@ namespace AutoSweep {
             Framework.Update -= OnUpdateEvent;
             ClientState.Login -= OnLogin;
             Commands.RemoveHandler(Utils.CommandName);
+            Commands.RemoveHandler(Utils.HouseCommandName);
+            PluginInterface.RemoveChatLinkHandler();
             PaissaClient?.Dispose();
             lotteryObserver.Dispose();
         }
 
         // ==== dalamud events ====
+        private void OnHouseCommand(string command, string args) {
+            Chat.Print(new SeString(
+                new TextPayload("Thanks for using PaissaHouse! You can view all of the houses available for sale at "),
+                new UIForegroundPayload(710),
+                chatLinkPayload,
+                new TextPayload("https://paissadb.zhu.codes/"),
+                RawPayload.LinkTerminator,
+                new UIForegroundPayload(0),
+                new TextPayload(" (opens in browser)."))
+            );
+        }
+
         private void OnCommand(string command, string args) {
             switch (args) {
                 case "reset":
@@ -107,6 +128,13 @@ namespace AutoSweep {
                     ui.SettingsVisible = true;
                     break;
             }
+        }
+
+        private void OnChatLinkClick(uint cmdId, SeString seString) {
+            Process.Start(new ProcessStartInfo {
+                FileName = "https://paissadb.zhu.codes/",
+                UseShellExecute = true
+            });
         }
 
         private void OnLogin(object _, EventArgs __) {
@@ -162,8 +190,9 @@ namespace AutoSweep {
         /// </summary>
         internal void OnFoundOpenHouse(uint worldId, uint territoryTypeId, int wardNumber, int plotNumber, uint? price, string messagePrefix = "") {
             PlaceName place = Territories.GetRow(territoryTypeId)?.PlaceName.Value;
-            SeString districtName = place?.NameNoArticle.RawString.Length > 0 ? place.NameNoArticle : place?.Name; // languages like German do not use NameNoArticle (#2)
-            SeString worldName = Worlds.GetRow(worldId)?.Name;
+            // languages like German do not use NameNoArticle (#2)
+            Lumina.Text.SeString districtName = place?.NameNoArticle.RawString.Length > 0 ? place.NameNoArticle : place?.Name;
+            Lumina.Text.SeString worldName = Worlds.GetRow(worldId)?.Name;
 
             HousingLandSet landSet = HousingLandSets.GetRow(Utils.TerritoryTypeIdToLandSetId(territoryTypeId));
             byte? houseSize = landSet?.PlotSize[plotNumber];
