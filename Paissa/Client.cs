@@ -190,7 +190,14 @@ namespace AutoSweep.Paissa {
                 ws.OnMessage += OnWSMessage;
                 ws.OnClose += OnWSClose;
                 ws.OnError += OnWSError;
-                ws.Connect();
+                try {
+                    ws.Connect();
+                } catch (PlatformNotSupportedException) {
+                    // idk why this happens but it doesn't seem to affect the ws
+                    // silence for now to avoid polluting logs
+                    // todo what is happening here?
+                    // https://github.com/zhudotexe/FFXIV_PaissaHouse/issues/14
+                }
                 PluginLog.Debug("ReconnectWS complete");
             });
         }
