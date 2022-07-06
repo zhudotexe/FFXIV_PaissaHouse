@@ -42,6 +42,8 @@ namespace AutoSweep {
         public bool Small { get; set; } = true;
         public bool Medium { get; set; } = true;
         public bool Large { get; set; } = true;
+        public bool FreeCompany { get; set; } = true;
+        public bool Individual { get; set; } = true;
     }
 
     public enum OutputFormat {

@@ -125,6 +125,11 @@ namespace AutoSweep {
                 if (ImGui.Checkbox("Medium", ref medium)) notifConfig.Medium = medium;
                 bool large = notifConfig.Large;
                 if (ImGui.Checkbox("Large", ref large)) notifConfig.Large = large;
+                ImGui.Separator();
+                bool fc = notifConfig.FreeCompany;
+                if (ImGui.Checkbox("Free Company Purchase Allowed", ref fc)) notifConfig.FreeCompany = fc;
+                bool solo = notifConfig.Individual;
+                if (ImGui.Checkbox("Individual Purchase Allowed", ref solo)) notifConfig.Individual = solo;
                 ImGui.EndTabItem();
             }
         }

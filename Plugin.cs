@@ -162,7 +162,7 @@ namespace AutoSweep {
         /// </summary>
         private void OnPlotOpened(object sender, PlotOpenedEventArgs e) {
             if (e.PlotDetail == null) return;
-            bool notifEnabled = Utils.ConfigEnabledForPlot(this, e.PlotDetail.world_id, e.PlotDetail.district_id, e.PlotDetail.size);
+            bool notifEnabled = Utils.ConfigEnabledForPlot(this, e.PlotDetail.world_id, e.PlotDetail.district_id, e.PlotDetail.size, e.PlotDetail.purchase_system);
             if (!notifEnabled) return;
             // we only notify on PlotOpen if the purchase type is FCFS or we know it is available
             if (!((e.PlotDetail.purchase_system & PurchaseSystem.Lottery) == 0 || e.PlotDetail.lotto_phase == AvailabilityType.Available)) return;
@@ -173,7 +173,7 @@ namespace AutoSweep {
 
         private void OnPlotUpdate(object sender, PlotUpdateEventArgs e) {
             if (e.PlotUpdate == null) return;
-            bool notifEnabled = Utils.ConfigEnabledForPlot(this, e.PlotUpdate.world_id, e.PlotUpdate.district_id, e.PlotUpdate.size);
+            bool notifEnabled = Utils.ConfigEnabledForPlot(this, e.PlotUpdate.world_id, e.PlotUpdate.district_id, e.PlotUpdate.size, e.PlotUpdate.purchase_system);
             if (!notifEnabled) return;
             // we only notify on PlotUpdate if the purchase type is lottery and it is available now and was not before
             if (!((e.PlotUpdate.purchase_system & PurchaseSystem.Lottery) == PurchaseSystem.Lottery

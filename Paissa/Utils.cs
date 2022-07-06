@@ -40,7 +40,7 @@ namespace AutoSweep.Paissa {
                 .Replace("{houseSizeName}", houseSizeName);
         }
 
-        public static bool ConfigEnabledForPlot(Plugin plugin, ushort worldId, ushort districtId, ushort size) {
+        public static bool ConfigEnabledForPlot(Plugin plugin, ushort worldId, ushort districtId, ushort size, PurchaseSystem purchaseSystem) {
             if (!plugin.Configuration.Enabled) return false;
             // does the config want notifs for this world?
             World eventWorld = plugin.Worlds.GetRow(worldId);
@@ -48,7 +48,7 @@ namespace AutoSweep.Paissa {
                   || plugin.Configuration.HomeworldNotifs && worldId == plugin.ClientState.LocalPlayer?.HomeWorld.Id
                   || plugin.Configuration.DatacenterNotifs && eventWorld?.DataCenter.Row == plugin.ClientState.LocalPlayer?.HomeWorld.GameData.DataCenter.Row))
                 return false;
-            // what about house sizes in this district?
+            // get the district config
             DistrictNotifConfig districtNotifs;
             switch (districtId) {
                 case 339:
@@ -70,6 +70,7 @@ namespace AutoSweep.Paissa {
                     PluginLog.Warning($"Unknown district in plot open event: {districtId}");
                     return false;
             }
+            // what about house sizes in this district?
             bool notifEnabled;
             switch (size) {
                 case 0:
@@ -85,6 +86,9 @@ namespace AutoSweep.Paissa {
                     PluginLog.Warning($"Unknown plot size in plot open event: {size}");
                     return false;
             }
+            // and FC/individual purchase?
+            PurchaseSystem purchaseSystemMask = (districtNotifs.FreeCompany ? PurchaseSystem.FreeCompany : 0) | (districtNotifs.Individual ? PurchaseSystem.Individual : 0);
+            notifEnabled = notifEnabled && (purchaseSystem & purchaseSystemMask) != 0;
             return notifEnabled;
         }
     }
