@@ -32,7 +32,7 @@ namespace AutoSweep {
 
             ImGui.SetNextWindowSize(new Vector2(450, 210), ImGuiCond.FirstUseEver);
             if (ImGui.Begin("PaissaHouse Configuration", ref settingsVisible,
-                ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)) {
+                    ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)) {
                 // tab bar
                 if (ImGui.BeginTabBar("paissatabs")) {
                     // tab: settings
@@ -89,7 +89,13 @@ namespace AutoSweep {
                             }
                             ImGui.EndCombo();
                         }
-                        
+
+                        // sweep chat alert
+                        bool chatSweepAlert = configuration.ChatSweepAlert;
+                        if (ImGui.Checkbox("Chat Sweep Notifications", ref chatSweepAlert)) configuration.ChatSweepAlert = chatSweepAlert;
+                        if (ImGui.IsItemHovered())
+                            ImGui.SetTooltip("Whether or not PaissaHouse should print information about ward sweeps when viewing housing districts from an aetheryte or ferry.");
+
                         ImGui.EndTabItem();
                     }
                     DrawTabItemForDistrict("Mist", configuration.Mist);

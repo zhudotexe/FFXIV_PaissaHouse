@@ -27,7 +27,9 @@ namespace AutoSweep.Paissa {
 
                 SeString districtName = plugin.Territories.GetRow((uint)wardInfo.LandIdent.TerritoryTypeId)?.PlaceName.Value?.Name;
                 SeString worldName = plugin.Worlds.GetRow((uint)wardInfo.LandIdent.WorldId)?.Name;
-                plugin.Chat.Print($"Began sweep for {districtName} ({worldName})");
+                if (plugin.Configuration.ChatSweepAlert) {
+                    plugin.Chat.Print($"Began sweep for {districtName} ({worldName})");
+                }
             }
 
             // if we've seen this ward already, ignore it
@@ -52,6 +54,8 @@ namespace AutoSweep.Paissa {
         ///     Called each time the user finishes sweeping a full district, with the wardinfo as the last ward swept.
         /// </summary>
         private void OnFinishedDistrictSweep(HousingWardInfo housingWardInfo) {
+            if (!plugin.Configuration.ChatSweepAlert) return;
+
             SeString districtName = plugin.Territories.GetRow((uint)SweepState.DistrictId)?.PlaceName.Value?.Name;
 
             plugin.Chat.Print($"Swept all {Utils.NumWardsPerDistrict} wards. Thank you for your contribution!");

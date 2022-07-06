@@ -25,7 +25,8 @@ namespace AutoSweep {
         public bool AllNotifs { get; set; } = false; // receive alerts for all worlds
 
         public XivChatType ChatType { get; set; } = XivChatType.Debug;
-        public int Version { get; set; } = 3;
+        public bool ChatSweepAlert { get; set; } = true; // thank the user for contributions in chat/"began sweep"
+        public int Version { get; set; } = 4;
 
         public void Initialize(DalamudPluginInterface pluginInterface) {
             this.pluginInterface = pluginInterface;
