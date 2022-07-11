@@ -42,10 +42,10 @@ namespace AutoSweep.Paissa {
         public uint price { get; set; }
         public float last_updated_time { get; set; }
         public PurchaseSystem purchase_system { get; set; }
-        public uint lotto_entries { get; set; }
-        public AvailabilityType lotto_phase { get; set; }
+        public uint? lotto_entries { get; set; }
+        public AvailabilityType? lotto_phase { get; set; }
         public AvailabilityType? previous_lotto_phase { get; set; }
-        public uint lotto_phase_until { get; set; }
+        public uint? lotto_phase_until { get; set; }
     }
 
     public class SoldPlotDetail {
