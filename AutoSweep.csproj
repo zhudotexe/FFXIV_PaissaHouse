@@ -3,7 +3,7 @@
     <PropertyGroup>
         <Title>autoSweep</Title>
         <Authors>zhudotexe</Authors>
-        <TargetFramework>net5.0-windows</TargetFramework>
+        <TargetFramework>net6.0-windows</TargetFramework>
         <LangVersion>9</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Deterministic>true</Deterministic>
@@ -64,10 +64,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DalamudPackager" Version="2.1.6" />
+        <PackageReference Include="DalamudPackager" Version="2.1.8" />
         <PackageReference Include="DebounceThrottle" Version="1.0.0" />
         <PackageReference Include="ILRepack" Version="2.0.18" />
-        <PackageReference Include="JWT" Version="8.9.0" />
+        <PackageReference Include="JWT" Version="9.0.3" />
         <PackageReference Include="WebSocketSharp.Standard" Version="1.0.3" />
     </ItemGroup>
 
