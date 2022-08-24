@@ -90,7 +90,7 @@ jobs:
       - name: Find Previous Release
         id: findtag
         run: |
-          echo ::set-output name=previous_release::$(git tag --sort "-committerdate" | head -n 1)
+          echo ::set-output name=previous_release::$(git tag --sort "-committerdate" | sed -n 2p)
         
       - name: Download artifact
         uses: actions/download-artifact@v2
