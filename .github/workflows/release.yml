@@ -106,9 +106,9 @@ jobs:
           
       - name: Copy dist files
         run: |
-          cp out/latest.zip DalamudPlugins/autoSweep/latest.zip
-          cp out/autoSweep.json DalamudPlugins/autoSweep/autoSweep.json
-          cp -r out/images DalamudPlugins/autoSweep/
+          cp out/latest.zip DalamudPlugins/plugins/autoSweep/latest.zip
+          cp out/autoSweep.json DalamudPlugins/plugins/autoSweep/autoSweep.json
+          cp -r out/images DalamudPlugins/plugins/autoSweep
           
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
