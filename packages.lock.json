@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net7.0-windows7.0": {
+      "DalamudPackager": {
+        "type": "Direct",
+        "requested": "[2.1.10, )",
+        "resolved": "2.1.10",
+        "contentHash": "S6NrvvOnLgT4GDdgwuKVJjbFo+8ZEj+JsEYk9ojjOR/MMfv1dIFpT8aRJQfI24rtDcw1uF+GnSSMN4WW1yt7fw=="
+      },
+      "DebounceThrottle": {
+        "type": "Direct",
+        "requested": "[1.0.0, )",
+        "resolved": "1.0.0",
+        "contentHash": "IBKEJ00Or/xsblu03U6YrXIYHZnD469L3rSknm6yok7eBMZWmodSmHUsnI/QAsVu+UAdFfDsPOrKlmoaqYZVRw=="
+      },
+      "WebSocketSharp.Standard": {
+        "type": "Direct",
+        "requested": "[1.0.3, )",
+        "resolved": "1.0.3",
+        "contentHash": "ITDck8Gv/1yv+aolSM/37YH6QBGksa9yNp3p91E1jZY2gI9IYs2WjiX22SW0Yt0Y8ovrPp/OiuQAqAZBYC7Y5Q=="
+      }
+    }
+  }
+}
