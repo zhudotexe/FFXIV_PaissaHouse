@@ -6,3 +6,4 @@ bin/
 packages/
 Paissa/Secrets.cs
 logs/
+packages.lock.json

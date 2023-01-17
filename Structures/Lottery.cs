@@ -7,10 +7,11 @@ namespace AutoSweep.Structures {
         public TenantType TenantType; // 0x21
         public AvailabilityType AvailabilityType; // 0x22
         public byte Unknown1; // 0x23
-        public uint PhaseEndsAt; // 0x24 - 0x27
-        public uint Unknown2; // 0x28 - 0x2B
-        public uint EntryCount; // 0x2C - 0x2F
-        public byte[] Unknown3; // 0x30 - 0x3F
+        public uint Unknown2; // 0x24 - 0x27
+        public uint PhaseEndsAt; // 0x28 - 0x2B
+        public uint Unknown3; // 0x2C - 0x2F
+        public uint EntryCount; // 0x30 - 0x33
+        public byte[] Unknown4; // 0x34 - 0x4B
 
         public static unsafe PlacardSaleInfo Read(IntPtr dataPtr) {
             var saleInfo = new PlacardSaleInfo();
@@ -20,10 +21,11 @@ namespace AutoSweep.Structures {
             saleInfo.TenantType = (TenantType)binaryReader.ReadByte();
             saleInfo.AvailabilityType = (AvailabilityType)binaryReader.ReadByte();
             saleInfo.Unknown1 = binaryReader.ReadByte();
-            saleInfo.PhaseEndsAt = binaryReader.ReadUInt32();
             saleInfo.Unknown2 = binaryReader.ReadUInt32();
+            saleInfo.PhaseEndsAt = binaryReader.ReadUInt32();
+            saleInfo.Unknown3 = binaryReader.ReadUInt32();
             saleInfo.EntryCount = binaryReader.ReadUInt32();
-            saleInfo.Unknown3 = binaryReader.ReadBytes(16);
+            saleInfo.Unknown4 = binaryReader.ReadBytes(16);
             return saleInfo;
         }
     }

@@ -10,6 +10,12 @@ namespace AutoSweep.Paissa {
         public JObject Data { get; set; }
     }
 
+    public class HelloResponse {
+        public string message { get; set; }
+        public double server_time { get; set; }
+        public string session_token { get; set; }
+    }
+
     public class DistrictDetail {
         public ushort district_id { get; set; }
         public string name { get; set; }

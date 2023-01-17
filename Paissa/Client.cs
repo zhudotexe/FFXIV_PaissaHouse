@@ -11,9 +11,6 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Gui;
 using Dalamud.Logging;
 using DebounceThrottle;
-using JWT;
-using JWT.Algorithms;
-using JWT.Serializers;
 using Newtonsoft.Json;
 using WebSocketSharp;
 
@@ -21,8 +18,8 @@ namespace AutoSweep.Paissa {
     public class PaissaClient : IDisposable {
         private readonly HttpClient http;
         private WebSocket ws;
-        private readonly JwtEncoder encoder = new(new HMACSHA256Algorithm(), new JsonNetSerializer(), new JwtBase64UrlEncoder());
         private bool disposed = false;
+        private string sessionToken;
 
         // dalamud
         private readonly ClientState clientState;
@@ -40,7 +37,6 @@ namespace AutoSweep.Paissa {
         private const string wsRoute = "wss://paissadb.zhu.codes/ws";
 #endif
 
-        private readonly byte[] secret = Encoding.UTF8.GetBytes(Secrets.JwtSecret);
 
         public event EventHandler<PlotOpenedEventArgs> OnPlotOpened;
         public event EventHandler<PlotUpdateEventArgs> OnPlotUpdate;
@@ -61,9 +57,9 @@ namespace AutoSweep.Paissa {
 
         // ==== Interface ====
         /// <summary>
-        ///     Fire and forget a POST request to register the current character's content ID.
+        ///     Make a POST request to register the current character's content ID.
         /// </summary>
-        public void Hello() {
+        public async Task Hello() {
             PlayerCharacter player = clientState.LocalPlayer;
             if (player == null)
                 return;
@@ -75,7 +71,12 @@ namespace AutoSweep.Paissa {
             };
             string content = JsonConvert.SerializeObject(charInfo);
             PluginLog.Debug(content);
-            PostFireAndForget("/hello", content);
+            var response = await Post("/hello", content, false);
+            if (response.IsSuccessStatusCode) {
+                string respText = await response.Content.ReadAsStringAsync();
+                sessionToken = JsonConvert.DeserializeObject<HelloResponse>(respText).session_token;
+                PluginLog.Log("Completed PaissaDB HELLO");
+            }
         }
 
         /// <summary>
@@ -139,20 +140,33 @@ namespace AutoSweep.Paissa {
             });
         }
 
-        private async void PostFireAndForget(string route, string content) {
-            await PostFireAndForget(route, content, 5);
+        private async void PostFireAndForget(string route, string content, bool auth = true, ushort retries = 5) {
+            await Post(route, content, auth, retries);
         }
 
-        private async Task PostFireAndForget(string route, string content, ushort retries) {
+        private async Task<HttpResponseMessage> Post(string route, string content, bool auth = true, ushort retries = 5) {
             HttpResponseMessage response = null;
+            PluginLog.Verbose(content);
 
             for (var i = 0; i < retries; i++) {
-                var request = new HttpRequestMessage(HttpMethod.Post, $"{apiBase}{route}") {
-                    Content = new StringContent(content, Encoding.UTF8, "application/json"),
-                    Headers = {
-                        Authorization = new AuthenticationHeaderValue("Bearer", GenerateJwt())
+                HttpRequestMessage request;
+                if (auth) {
+                    if (sessionToken == null) {
+                        PluginLog.LogWarning("Trying to send authed request but no session token!");
+                        await Hello();
+                        continue;
                     }
-                };
+                    request = new HttpRequestMessage(HttpMethod.Post, $"{apiBase}{route}") {
+                        Content = new StringContent(content, Encoding.UTF8, "application/json"),
+                        Headers = {
+                            Authorization = new AuthenticationHeaderValue("Bearer", sessionToken)
+                        }
+                    };
+                } else {
+                    request = new HttpRequestMessage(HttpMethod.Post, $"{apiBase}{route}") {
+                        Content = new StringContent(content, Encoding.UTF8, "application/json"),
+                    };
+                }
                 try {
                     response = await http.SendAsync(request);
                     PluginLog.Debug($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase})");
@@ -174,10 +188,12 @@ namespace AutoSweep.Paissa {
             }
 
             // todo better error handling
-            if (response == null)
+            if (response == null) {
                 chat.PrintError("There was an error connecting to PaissaDB.");
-            else if (!response.IsSuccessStatusCode)
+            } else if (!response.IsSuccessStatusCode) {
                 chat.PrintError($"There was an error connecting to PaissaDB: {response.ReasonPhrase}");
+            }
+            return response;
         }
 
 
@@ -185,7 +201,7 @@ namespace AutoSweep.Paissa {
         private void ReconnectWS() {
             Task.Run(() => {
                 ws?.Close(1000);
-                ws = new WebSocket(GetWSRouteWithAuth());
+                ws = new WebSocket(wsRoute);
                 ws.OnOpen += OnWSOpen;
                 ws.OnMessage += OnWSMessage;
                 ws.OnClose += OnWSClose;
@@ -248,22 +264,6 @@ namespace AutoSweep.Paissa {
             Task.Run(async () => await Task.Delay(t)).ContinueWith(_ => {
                 if (!disposed) ReconnectWS();
             });
-        }
-
-
-        // ==== helpers ====
-        private string GenerateJwt() {
-            var payload = new Dictionary<string, object> {
-                { "cid", clientState.LocalContentId },
-                { "aud", "PaissaHouse" },
-                { "iss", "PaissaDB" },
-                { "iat", DateTimeOffset.Now.ToUnixTimeSeconds() }
-            };
-            return encoder.Encode(payload, secret);
-        }
-
-        private string GetWSRouteWithAuth() {
-            return $"{wsRoute}?jwt={GenerateJwt()}";
         }
     }
 }

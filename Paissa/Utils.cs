@@ -7,7 +7,7 @@ namespace AutoSweep.Paissa {
         // configuration constants
         public const string CommandName = "/psweep";
         public const string HouseCommandName = "/phouse";
-        public const int NumWardsPerDistrict = 24;
+        public const int NumWardsPerDistrict = 30;
 
         public static uint TerritoryTypeIdToLandSetId(uint territoryTypeId) {
             return territoryTypeId switch {

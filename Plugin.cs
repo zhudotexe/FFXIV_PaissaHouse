@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using AutoSweep.Paissa;
 using AutoSweep.Structures;
 using Dalamud.Data;
@@ -144,7 +145,7 @@ namespace AutoSweep {
         private void OnUpdateEvent(Framework f) {
             if (clientNeedsHello && ClientState?.LocalPlayer != null && PaissaClient != null) {
                 clientNeedsHello = false;
-                PaissaClient.Hello();
+                Task.Run(async () => await PaissaClient.Hello());
             }
         }
 
