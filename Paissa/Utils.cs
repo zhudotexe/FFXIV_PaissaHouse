@@ -64,7 +64,7 @@ namespace AutoSweep.Paissa {
                     districtNotifs = plugin.Configuration.Shirogane;
                     break;
                 case 979:
-                    districtNotifs = plugin.Configuration.Empyreum;
+                    districtNotifs = plugin.Configuration.Empyrean;
                     break;
                 default:
                     PluginLog.Warning($"Unknown district in plot open event: {districtId}");

@@ -18,7 +18,7 @@ namespace AutoSweep {
         public DistrictNotifConfig LavenderBeds { get; set; } = new();
         public DistrictNotifConfig Goblet { get; set; } = new();
         public DistrictNotifConfig Shirogane { get; set; } = new();
-        public DistrictNotifConfig Empyreum { get; set; } = new();
+        public DistrictNotifConfig Empyrean { get; set; } = new();
 
         public bool HomeworldNotifs { get; set; } = true; // receive alerts for plots on your homeworld
         public bool DatacenterNotifs { get; set; } = false; // receive alerts for plots on all worlds on your data center
