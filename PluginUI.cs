@@ -102,7 +102,7 @@ namespace AutoSweep {
                     DrawTabItemForDistrict("The Lavender Beds", configuration.LavenderBeds);
                     DrawTabItemForDistrict("The Goblet", configuration.Goblet);
                     DrawTabItemForDistrict("Shirogane", configuration.Shirogane);
-                    DrawTabItemForDistrict("Empyrean", configuration.Empyrean);
+                    DrawTabItemForDistrict("Empyreum", configuration.Empyreum);
                     ImGui.EndTabBar();
                     ImGui.Separator();
                 }
