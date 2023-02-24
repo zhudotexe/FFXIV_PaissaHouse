@@ -31,7 +31,7 @@ PaissaHouse relies on data contributions from players like you to broadcast the 
 ### Ward Sweeps
 
 To contribute data to PaissaDB, the API powering PaissaHouse, simply teleport to a major city aetheryte, select
-"Residential District Aethernet" -> "Go to Specified Ward (Review Tabs)" and click through the 24 wards. This is
+"Residential District Aethernet" -> "Go to Specified Ward (Review Tabs)" and click through the 30 wards. This is
 called "sweeping" a district.
 
 If all goes well, you'll see any new plots you found pop up in real time, and a summary of the district once you've
@@ -39,7 +39,7 @@ clicked through the wards!
 
 <figure>
   <img src="https://cdn.discordapp.com/attachments/263128686004404225/842268996886724648/unknown.png">
-  <figcaption>The result of tabbing through all 24 wards.</figcaption>
+  <figcaption>The result of tabbing through 24 wards (before patch 6.3).</figcaption>
 </figure>
 
 If you plan on sweeping the same district multiple times in a row, run `/psweep reset` between each sweep to reset the
@@ -61,7 +61,7 @@ e.g. `{worldName}`):
 | `districtName`         | The name of the housing district.                                 | Lavender Beds     |
 | `districtNameNoSpaces` | The name of the housing district, with no spaces.                 | LavenderBeds      |
 | `worldName`            | The name of the world.                                            | Diabolos          |
-| `wardNum`              | The ward number.                                                  | 24                |
+| `wardNum`              | The ward number.                                                  | 30                |
 | `plotNum`              | The plot number.                                                  | 60                |
 | `housePrice`           | The price of the house as a raw number.                           | 3750000           |
 | `housePriceMillions`   | The price of the house divided by 1 million, to 3 decimal places. | 3.750             |
