@@ -68,8 +68,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DalamudPackager" Version="2.1.10" />
-        <PackageReference Include="DebounceThrottle" Version="1.0.0" />
+        <PackageReference Include="DalamudPackager" Version="2.1.11" />
+        <PackageReference Include="DebounceThrottle" Version="2.0.0" />
         <PackageReference Include="WebSocketSharp.Standard" Version="1.0.3" />
     </ItemGroup>
 
