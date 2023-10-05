@@ -1,5 +1,3 @@
-using Dalamud.Game.ClientState;
-using Dalamud.Logging;
 using Lumina.Excel.GeneratedSheets;
 
 namespace AutoSweep.Paissa {
@@ -46,7 +44,7 @@ namespace AutoSweep.Paissa {
             World eventWorld = plugin.Worlds.GetRow(worldId);
             if (!(plugin.Configuration.AllNotifs
                   || plugin.Configuration.HomeworldNotifs && worldId == plugin.ClientState.LocalPlayer?.HomeWorld.Id
-                  || plugin.Configuration.DatacenterNotifs && eventWorld?.DataCenter.Row == plugin.ClientState.LocalPlayer?.HomeWorld.GameData.DataCenter.Row))
+                  || plugin.Configuration.DatacenterNotifs && eventWorld?.DataCenter.Row == plugin.ClientState.LocalPlayer?.HomeWorld.GameData?.DataCenter.Row))
                 return false;
             // get the district config
             DistrictNotifConfig districtNotifs;
@@ -67,7 +65,6 @@ namespace AutoSweep.Paissa {
                     districtNotifs = plugin.Configuration.Empyrean;
                     break;
                 default:
-                    PluginLog.Warning($"Unknown district in plot open event: {districtId}");
                     return false;
             }
             // what about house sizes in this district?
@@ -83,7 +80,6 @@ namespace AutoSweep.Paissa {
                     notifEnabled = districtNotifs.Large;
                     break;
                 default:
-                    PluginLog.Warning($"Unknown plot size in plot open event: {size}");
                     return false;
             }
             // and FC/individual purchase?

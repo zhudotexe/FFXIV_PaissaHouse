@@ -1,7 +1,6 @@
 using System;
 using AutoSweep.Structures;
 using Dalamud.Hooking;
-using Dalamud.Logging;
 using Dalamud.Utility.Signatures;
 using Lumina.Excel.GeneratedSheets;
 using Lumina.Text;
@@ -22,16 +21,16 @@ namespace AutoSweep.Paissa {
         );
 
         [Signature("E8 ?? ?? ?? ?? 48 8B B4 24 ?? ?? ?? ?? 48 8B 6C 24 ?? E9", DetourName = nameof(OnPlacardSaleInfo))]
-        private Hook<HandlePlacardSaleInfoDelegate>? PlacardSaleInfoHook { get; init; }
+        private Hook<HandlePlacardSaleInfoDelegate>? placardSaleInfoHook;
 
         public LotteryObserver(Plugin plugin) {
-            SignatureHelper.Initialise(this);
             this.plugin = plugin;
-            PlacardSaleInfoHook?.Enable();
+            plugin.InteropProvider.InitializeFromAttributes(this);
+            placardSaleInfoHook?.Enable();
         }
 
         public void Dispose() {
-            PlacardSaleInfoHook?.Dispose();
+            placardSaleInfoHook?.Dispose();
         }
 
         public void OnPlacardSaleInfo(
@@ -44,7 +43,7 @@ namespace AutoSweep.Paissa {
             IntPtr placardSaleInfoPtr,
             long a8
         ) {
-            PlacardSaleInfoHook!.Original(agentBase, housingType, territoryTypeId, wardId, plotId, apartmentNumber, placardSaleInfoPtr, a8);
+            placardSaleInfoHook!.Original(agentBase, housingType, territoryTypeId, wardId, plotId, apartmentNumber, placardSaleInfoPtr, a8);
 
             // if the plot is owned, ignore it
             if (housingType != HousingType.UnownedHouse) return;
@@ -52,10 +51,11 @@ namespace AutoSweep.Paissa {
 
             PlacardSaleInfo saleInfo = PlacardSaleInfo.Read(placardSaleInfoPtr);
 
-            PluginLog.LogDebug(
+            plugin.PluginLog.Debug(
                 $"Got PlacardSaleInfo: PurchaseType={saleInfo.PurchaseType}, TenantType={saleInfo.TenantType}, available={saleInfo.AvailabilityType}, until={saleInfo.PhaseEndsAt}, numEntries={saleInfo.EntryCount}");
-            PluginLog.LogDebug($"unknown1={saleInfo.Unknown1}, unknown2={saleInfo.Unknown2}, unknown3={saleInfo.Unknown3}, unknown4={BitConverter.ToString(saleInfo.Unknown4)}");
-            PluginLog.LogDebug(
+            plugin.PluginLog.Debug(
+                $"unknown1={saleInfo.Unknown1}, unknown2={saleInfo.Unknown2}, unknown3={saleInfo.Unknown3}, unknown4={BitConverter.ToString(saleInfo.Unknown4)}");
+            plugin.PluginLog.Debug(
                 $"housingType={housingType}, territoryTypeId={territoryTypeId}, wardId={wardId}, plotId={plotId}, apartmentNumber={apartmentNumber}, placardSaleInfoPtr={placardSaleInfoPtr}, a8={a8}");
 
             // get information about the world from the clientstate
@@ -64,7 +64,7 @@ namespace AutoSweep.Paissa {
 
             SeString place = plugin.Territories.GetRow(territoryTypeId)?.PlaceName.Value?.Name;
             SeString worldName = world.Name;
-            PluginLog.LogInformation($"Plot {place} {wardId + 1}-{plotId + 1} ({worldName}) has {saleInfo.EntryCount} lottery entries.");
+            plugin.PluginLog.Info($"Plot {place} {wardId + 1}-{plotId + 1} ({worldName}) has {saleInfo.EntryCount} lottery entries.");
 
             plugin.PaissaClient.PostLotteryInfo(world.RowId, territoryTypeId, wardId, plotId, saleInfo);
         }

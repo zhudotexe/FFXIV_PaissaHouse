@@ -14,7 +14,7 @@
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
         <AssemblyName>autoSweep</AssemblyName>
-        <AssemblyVersion>1.4.2.0</AssemblyVersion>
+        <AssemblyVersion>1.4.3.0</AssemblyVersion>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -68,7 +68,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DalamudPackager" Version="2.1.11" />
+        <PackageReference Include="DalamudPackager" Version="2.1.12" />
         <PackageReference Include="DebounceThrottle" Version="2.0.0" />
         <PackageReference Include="WebSocketSharp.Standard" Version="1.0.3" />
     </ItemGroup>

@@ -1,19 +1,13 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Threading.Tasks;
 using AutoSweep.Paissa;
 using AutoSweep.Structures;
-using Dalamud.Data;
-using Dalamud.Game;
-using Dalamud.Game.ClientState;
 using Dalamud.Game.Command;
-using Dalamud.Game.Gui;
-using Dalamud.Game.Network;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
-using Dalamud.Logging;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
 
@@ -23,13 +17,13 @@ namespace AutoSweep {
 
         // frameworks/data
         internal readonly DalamudPluginInterface PluginInterface;
-        internal readonly ChatGui Chat;
-        internal readonly ClientState ClientState;
-        internal readonly CommandManager Commands;
         internal readonly Configuration Configuration;
-        internal readonly DataManager Data;
-        internal readonly Framework Framework;
-        internal readonly GameNetwork Network;
+        internal readonly IChatGui Chat;
+        internal readonly IClientState ClientState;
+        internal readonly ICommandManager Commands;
+        internal readonly IFramework Framework;
+        internal readonly IPluginLog PluginLog;
+        internal readonly IGameInteropProvider InteropProvider;
         internal readonly PaissaClient PaissaClient;
 
         internal readonly ExcelSheet<HousingLandSet> HousingLandSets;
@@ -45,20 +39,21 @@ namespace AutoSweep {
 
         public Plugin(
             DalamudPluginInterface pi,
-            ChatGui chat,
-            GameNetwork network,
-            DataManager data,
-            CommandManager commands,
-            ClientState clientState,
-            Framework framework
+            IChatGui chat,
+            IDataManager data,
+            ICommandManager commands,
+            IClientState clientState,
+            IFramework framework,
+            IPluginLog log,
+            IGameInteropProvider interopProvider
         ) {
             PluginInterface = pi;
             Chat = chat;
-            Network = network;
-            Data = data;
             Commands = commands;
             ClientState = clientState;
             Framework = framework;
+            PluginLog = log;
+            InteropProvider = interopProvider;
 
             // setup
             Configuration = pi.GetPluginConfig() as Configuration ?? new Configuration();
@@ -78,7 +73,6 @@ namespace AutoSweep {
             chatLinkPayload = pi.AddChatLinkHandler(0, OnChatLinkClick);
 
             // event hooks
-            network.NetworkMessage += OnNetworkEvent;
             pi.UiBuilder.Draw += DrawUI;
             pi.UiBuilder.OpenConfigUi += DrawConfigUI;
             framework.Update += OnUpdateEvent;
@@ -87,16 +81,15 @@ namespace AutoSweep {
             // paissa setup
             wardObserver = new WardObserver(this);
             lotteryObserver = new LotteryObserver(this);
-            PaissaClient = new PaissaClient(clientState, chat);
+            PaissaClient = new PaissaClient(clientState, chat, log);
             PaissaClient.OnPlotOpened += OnPlotOpened;
             PaissaClient.OnPlotUpdate += OnPlotUpdate;
 
-            PluginLog.LogDebug($"Initialization complete: configVersion={Configuration.Version}");
+            PluginLog.Debug($"Initialization complete: configVersion={Configuration.Version}");
         }
 
         public void Dispose() {
             ui.Dispose();
-            Network.NetworkMessage -= OnNetworkEvent;
             Framework.Update -= OnUpdateEvent;
             ClientState.Login -= OnLogin;
             Commands.RemoveHandler(Utils.CommandName);
@@ -104,6 +97,7 @@ namespace AutoSweep {
             PluginInterface.RemoveChatLinkHandler();
             PaissaClient?.Dispose();
             lotteryObserver.Dispose();
+            wardObserver.Dispose();
         }
 
         // ==== dalamud events ====
@@ -138,24 +132,16 @@ namespace AutoSweep {
             });
         }
 
-        private void OnLogin(object _, EventArgs __) {
+        private void OnLogin() {
             clientNeedsHello = true;
         }
 
-        private void OnUpdateEvent(Framework f) {
+        private void OnUpdateEvent(IFramework f) {
             if (clientNeedsHello && ClientState?.LocalPlayer != null && PaissaClient != null) {
                 clientNeedsHello = false;
                 Task.Run(async () => await PaissaClient.Hello());
             }
         }
-
-        private void OnNetworkEvent(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction) {
-            if (!Configuration.Enabled) return;
-            if (direction != NetworkMessageDirection.ZoneDown) return;
-            if (!Data.IsDataReady) return;
-            if (opCode == Data.ServerOpCodes["HousingWardInfo"]) wardObserver.OnHousingWardInfo(dataPtr);
-        }
-
 
         // ==== paissa events ====
         /// <summary>
@@ -228,7 +214,7 @@ namespace AutoSweep {
 
         // ==== helpers ====
         private void SendChatToConfiguredChannel(string message) {
-            Chat.PrintChat(new XivChatEntry {
+            Chat.Print(new XivChatEntry {
                 Name = "[PaissaHouse]",
                 Message = message,
                 Type = Configuration.ChatType
