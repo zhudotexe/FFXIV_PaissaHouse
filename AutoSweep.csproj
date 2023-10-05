@@ -74,9 +74,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="images\icon.png">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>false</Visible>
-        </Content>
+      <ContentWithTargetPath Include="images\icon.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Visible>false</Visible>
+        <TargetPath>icon.png</TargetPath>
+      </ContentWithTargetPath>
     </ItemGroup>
 </Project>
