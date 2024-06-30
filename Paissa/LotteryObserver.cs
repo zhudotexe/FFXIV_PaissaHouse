@@ -20,12 +20,13 @@ namespace AutoSweep.Paissa {
             long a8
         );
 
-        [Signature("E8 ?? ?? ?? ?? 48 8B B4 24 ?? ?? ?? ?? 48 8B 6C 24 ?? E9", DetourName = nameof(OnPlacardSaleInfo))]
+        // easy way to find sig: search for scalar 7043
+        [Signature("E8 ?? ?? ?? ?? 48 8B 74 24 ?? 48 8B 6C 24 ?? E9", DetourName = nameof(OnPlacardSaleInfo))]
         private Hook<HandlePlacardSaleInfoDelegate>? placardSaleInfoHook;
 
         public LotteryObserver(Plugin plugin) {
             this.plugin = plugin;
-            plugin.InteropProvider.InitializeFromAttributes(this);
+            Plugin.InteropProvider.InitializeFromAttributes(this);
             placardSaleInfoHook?.Enable();
         }
 
@@ -51,20 +52,20 @@ namespace AutoSweep.Paissa {
 
             PlacardSaleInfo saleInfo = PlacardSaleInfo.Read(placardSaleInfoPtr);
 
-            plugin.PluginLog.Debug(
+            Plugin.PluginLog.Debug(
                 $"Got PlacardSaleInfo: PurchaseType={saleInfo.PurchaseType}, TenantType={saleInfo.TenantType}, available={saleInfo.AvailabilityType}, until={saleInfo.PhaseEndsAt}, numEntries={saleInfo.EntryCount}");
-            plugin.PluginLog.Debug(
+            Plugin.PluginLog.Debug(
                 $"unknown1={saleInfo.Unknown1}, unknown2={saleInfo.Unknown2}, unknown3={saleInfo.Unknown3}, unknown4={BitConverter.ToString(saleInfo.Unknown4)}");
-            plugin.PluginLog.Debug(
+            Plugin.PluginLog.Debug(
                 $"housingType={housingType}, territoryTypeId={territoryTypeId}, wardId={wardId}, plotId={plotId}, apartmentNumber={apartmentNumber}, placardSaleInfoPtr={placardSaleInfoPtr}, a8={a8}");
 
             // get information about the world from the clientstate
-            World world = plugin.ClientState.LocalPlayer?.CurrentWorld.GameData;
+            World world = Plugin.ClientState.LocalPlayer?.CurrentWorld.GameData;
             if (world is null) return;
 
             SeString place = plugin.Territories.GetRow(territoryTypeId)?.PlaceName.Value?.Name;
             SeString worldName = world.Name;
-            plugin.PluginLog.Info($"Plot {place} {wardId + 1}-{plotId + 1} ({worldName}) has {saleInfo.EntryCount} lottery entries.");
+            Plugin.PluginLog.Info($"Plot {place} {wardId + 1}-{plotId + 1} ({worldName}) has {saleInfo.EntryCount} lottery entries.");
 
             plugin.PaissaClient.PostLotteryInfo(world.RowId, territoryTypeId, wardId, plotId, saleInfo);
         }

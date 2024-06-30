@@ -20,9 +20,7 @@ namespace AutoSweep.Paissa {
         private string sessionToken;
 
         // dalamud
-        private readonly IClientState clientState;
-        private readonly IChatGui chat;
-        private readonly IPluginLog log;
+        private Plugin plugin;
 
         // ingest debounce
         private readonly DebounceDispatcher ingestDebounceDispatcher = new DebounceDispatcher(1200);
@@ -41,10 +39,8 @@ namespace AutoSweep.Paissa {
         public event EventHandler<PlotUpdateEventArgs> OnPlotUpdate;
         public event EventHandler<PlotSoldEventArgs> OnPlotSold;
 
-        public PaissaClient(IClientState clientState, IChatGui chatGui, IPluginLog log) {
-            this.clientState = clientState;
-            chat = chatGui;
-            this.log = log;
+        public PaissaClient(Plugin plugin) {
+            this.plugin = plugin;
             http = new HttpClient();
             ReconnectWS();
         }
@@ -60,23 +56,23 @@ namespace AutoSweep.Paissa {
         ///     Make a POST request to register the current character's content ID.
         /// </summary>
         public async Task Hello() {
-            PlayerCharacter player = clientState.LocalPlayer;
+            IPlayerCharacter player = Plugin.ClientState.LocalPlayer;
             if (player == null) return;
             var homeworld = player.HomeWorld.GameData;
             if (homeworld == null) return;
             var charInfo = new Dictionary<string, object> {
-                { "cid", clientState.LocalContentId },
+                { "cid", Plugin.ClientState.LocalContentId },
                 { "name", player.Name.ToString() },
                 { "world", homeworld.Name.ToString() },
                 { "worldId", player.HomeWorld.Id }
             };
             string content = JsonConvert.SerializeObject(charInfo);
-            log.Debug(content);
+            Plugin.PluginLog.Debug(content);
             var response = await Post("/hello", content, false);
             if (response.IsSuccessStatusCode) {
                 string respText = await response.Content.ReadAsStringAsync();
                 sessionToken = JsonConvert.DeserializeObject<HelloResponse>(respText).session_token;
-                log.Info("Completed PaissaDB HELLO");
+                Plugin.PluginLog.Info("Completed PaissaDB HELLO");
             }
         }
 
@@ -99,7 +95,8 @@ namespace AutoSweep.Paissa {
         /// <summary>
         ///     Fire and forget a POST request for a placard's lottery info.
         /// </summary>
-        public void PostLotteryInfo(uint worldId, ushort districtId, ushort wardId, ushort plotId, PlacardSaleInfo saleInfo) {
+        public void PostLotteryInfo(uint worldId, ushort districtId, ushort wardId, ushort plotId,
+            PlacardSaleInfo saleInfo) {
             var data = new Dictionary<string, object> {
                 { "event_type", "LOTTERY_INFO" },
                 { "client_timestamp", new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() },
@@ -124,7 +121,8 @@ namespace AutoSweep.Paissa {
         /// <returns>The DistrictDetail</returns>
         public async Task<DistrictDetail> GetDistrictDetailAsync(short worldId, short districtId) {
             HttpResponseMessage response = await http.GetAsync($"{apiBase}/worlds/{worldId}/{districtId}");
-            log.Debug($"GET {apiBase}/worlds/{worldId}/{districtId} returned {response.StatusCode} ({response.ReasonPhrase})");
+            Plugin.PluginLog.Debug(
+                $"GET {apiBase}/worlds/{worldId}/{districtId} returned {response.StatusCode} ({response.ReasonPhrase})");
             response.EnsureSuccessStatusCode();
             string respText = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<DistrictDetail>(respText);
@@ -136,7 +134,7 @@ namespace AutoSweep.Paissa {
             ingestDebounceDispatcher.Debounce(() => {
                 string bulkIngestData = JsonConvert.SerializeObject(ingestDataQueue);
                 PostFireAndForget("/ingest", bulkIngestData);
-                log.Debug($"Bulk ingesting {ingestDataQueue.Count} entries ({bulkIngestData.Length}B)");
+                Plugin.PluginLog.Debug($"Bulk ingesting {ingestDataQueue.Count} entries ({bulkIngestData.Length}B)");
                 ingestDataQueue.Clear();
             });
         }
@@ -145,55 +143,66 @@ namespace AutoSweep.Paissa {
             await Post(route, content, auth, retries);
         }
 
-        private async Task<HttpResponseMessage> Post(string route, string content, bool auth = true, ushort retries = 5) {
+        private async Task<HttpResponseMessage>
+            Post(string route, string content, bool auth = true, ushort retries = 5) {
             HttpResponseMessage response = null;
-            log.Verbose(content);
+            Plugin.PluginLog.Verbose(content);
 
             for (var i = 0; i < retries; i++) {
                 HttpRequestMessage request;
                 if (auth) {
                     if (sessionToken == null) {
-                        log.Warning("Trying to send authed request but no session token!");
+                        Plugin.PluginLog.Warning("Trying to send authed request but no session token!");
                         await Hello();
                         continue;
                     }
+
                     request = new HttpRequestMessage(HttpMethod.Post, $"{apiBase}{route}") {
                         Content = new StringContent(content, Encoding.UTF8, "application/json"),
                         Headers = {
                             Authorization = new AuthenticationHeaderValue("Bearer", sessionToken)
                         }
                     };
-                } else {
+                }
+                else {
                     request = new HttpRequestMessage(HttpMethod.Post, $"{apiBase}{route}") {
                         Content = new StringContent(content, Encoding.UTF8, "application/json"),
                     };
                 }
+
                 try {
                     response = await http.SendAsync(request);
-                    log.Debug($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase})");
+                    Plugin.PluginLog.Debug(
+                        $"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase})");
                     if (!response.IsSuccessStatusCode) {
                         string respText = await response.Content.ReadAsStringAsync();
-                        log.Warning($"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase}):\n{respText}");
-                    } else {
+                        Plugin.PluginLog.Warning(
+                            $"{request.Method} {request.RequestUri} returned {response.StatusCode} ({response.ReasonPhrase}):\n{respText}");
+                    }
+                    else {
                         break;
                     }
-                } catch (Exception e) {
-                    log.Warning(e, $"{request.Method} {request.RequestUri} raised an error:");
                 }
+                catch (Exception e) {
+                    Plugin.PluginLog.Warning(e, $"{request.Method} {request.RequestUri} raised an error:");
+                }
+
                 // if our request failed, exponential backoff for 2 * (i + 1) seconds
                 if (i + 1 < retries) {
                     int toDelay = 2000 * (i + 1) + new Random().Next(500, 1_500);
-                    log.Warning($"Request {i} failed, waiting for {toDelay}ms before retry...");
+                    Plugin.PluginLog.Warning($"Request {i} failed, waiting for {toDelay}ms before retry...");
                     await Task.Delay(toDelay);
                 }
             }
 
             // todo better error handling
             if (response == null) {
-                chat.PrintError("There was an error connecting to PaissaDB.");
-            } else if (!response.IsSuccessStatusCode) {
-                chat.PrintError($"There was an error connecting to PaissaDB: {response.ReasonPhrase}");
+                Plugin.Chat.PrintError("There was an error connecting to PaissaDB.");
             }
+            else if (!response.IsSuccessStatusCode) {
+                Plugin.Chat.PrintError($"There was an error connecting to PaissaDB: {response.ReasonPhrase}");
+            }
+
             return response;
         }
 
@@ -209,23 +218,25 @@ namespace AutoSweep.Paissa {
                 ws.OnError += OnWSError;
                 try {
                     ws.Connect();
-                } catch (PlatformNotSupportedException) {
+                }
+                catch (PlatformNotSupportedException) {
                     // idk why this happens but it doesn't seem to affect the ws
                     // silence for now to avoid polluting logs
                     // todo what is happening here?
                     // https://github.com/zhudotexe/FFXIV_PaissaHouse/issues/14
                 }
-                log.Debug("ReconnectWS complete");
+
+                Plugin.PluginLog.Debug("ReconnectWS complete");
             });
         }
 
         private void OnWSOpen(object sender, EventArgs e) {
-            log.Information("WebSocket connected");
+            Plugin.PluginLog.Information("WebSocket connected");
         }
 
         private void OnWSMessage(object sender, MessageEventArgs e) {
             if (!e.IsText) return;
-            log.Verbose($">>>> R: {e.Data}");
+            Plugin.PluginLog.Verbose($">>>> R: {e.Data}");
             var message = JsonConvert.DeserializeObject<WSMessage>(e.Data);
             switch (message.Type) {
                 case "plot_open":
@@ -240,20 +251,20 @@ namespace AutoSweep.Paissa {
                 case "ping":
                     break;
                 default:
-                    log.Warning($"Got unknown WS message: {e.Data}");
+                    Plugin.PluginLog.Warning($"Got unknown WS message: {e.Data}");
                     break;
             }
         }
 
         private void OnWSClose(object sender, CloseEventArgs e) {
-            log.Information($"WebSocket closed ({e.Code}: {e.Reason})");
+            Plugin.PluginLog.Information($"WebSocket closed ({e.Code}: {e.Reason})");
             // reconnect if unexpected close or server restarting
             if ((!e.WasClean || e.Code == 1012) && !disposed)
                 WSReconnectSoon();
         }
 
         private void OnWSError(object sender, ErrorEventArgs e) {
-            log.Warning(e.Exception, $"WebSocket error: {e.Message}");
+            Plugin.PluginLog.Warning(e.Exception, $"WebSocket error: {e.Message}");
             if (!disposed)
                 WSReconnectSoon();
         }
@@ -261,7 +272,8 @@ namespace AutoSweep.Paissa {
         private void WSReconnectSoon() {
             if (ws.IsAlive) return;
             int t = new Random().Next(5_000, 15_000);
-            log.Warning($"WebSocket closed unexpectedly: will reconnect to socket in {t / 1000f:F3} seconds");
+            Plugin.PluginLog.Warning(
+                $"WebSocket closed unexpectedly: will reconnect to socket in {t / 1000f:F3} seconds");
             Task.Run(async () => await Task.Delay(t)).ContinueWith(_ => {
                 if (!disposed) ReconnectWS();
             });

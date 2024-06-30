@@ -1,15 +1,11 @@
 ﻿using System;
 using Dalamud.Configuration;
 using Dalamud.Game.Text;
-using Dalamud.Plugin;
 
 namespace AutoSweep {
     [Serializable]
     public class Configuration : IPluginConfiguration {
         // the below exist just to make saving less cumbersome
-        [NonSerialized]
-        private DalamudPluginInterface pluginInterface;
-
         public bool Enabled { get; set; } = true;
         public string OutputFormatString { get; set; } = "";
         public OutputFormat OutputFormat { get; set; } = OutputFormat.Simple;
@@ -28,12 +24,8 @@ namespace AutoSweep {
         public bool ChatSweepAlert { get; set; } = true; // thank the user for contributions in chat/"began sweep"
         public int Version { get; set; } = 4;
 
-        public void Initialize(DalamudPluginInterface pluginInterface) {
-            this.pluginInterface = pluginInterface;
-        }
-
         public void Save() {
-            pluginInterface.SavePluginConfig(this);
+            Plugin.PluginInterface.SavePluginConfig(this);
         }
     }
 

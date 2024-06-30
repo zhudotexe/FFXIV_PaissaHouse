@@ -38,13 +38,15 @@ namespace AutoSweep.Paissa {
                 .Replace("{houseSizeName}", houseSizeName);
         }
 
-        public static bool ConfigEnabledForPlot(Plugin plugin, ushort worldId, ushort districtId, ushort size, PurchaseSystem purchaseSystem) {
+        public static bool ConfigEnabledForPlot(Plugin plugin, ushort worldId, ushort districtId, ushort size,
+            PurchaseSystem purchaseSystem) {
             if (!plugin.Configuration.Enabled) return false;
             // does the config want notifs for this world?
             World eventWorld = plugin.Worlds.GetRow(worldId);
             if (!(plugin.Configuration.AllNotifs
-                  || plugin.Configuration.HomeworldNotifs && worldId == plugin.ClientState.LocalPlayer?.HomeWorld.Id
-                  || plugin.Configuration.DatacenterNotifs && eventWorld?.DataCenter.Row == plugin.ClientState.LocalPlayer?.HomeWorld.GameData?.DataCenter.Row))
+                  || plugin.Configuration.HomeworldNotifs && worldId == Plugin.ClientState.LocalPlayer?.HomeWorld.Id
+                  || plugin.Configuration.DatacenterNotifs && eventWorld?.DataCenter.Row ==
+                  Plugin.ClientState.LocalPlayer?.HomeWorld.GameData?.DataCenter.Row))
                 return false;
             // get the district config
             DistrictNotifConfig districtNotifs;
@@ -67,6 +69,7 @@ namespace AutoSweep.Paissa {
                 default:
                     return false;
             }
+
             // what about house sizes in this district?
             bool notifEnabled;
             switch (size) {
@@ -82,8 +85,10 @@ namespace AutoSweep.Paissa {
                 default:
                     return false;
             }
+
             // and FC/individual purchase?
-            PurchaseSystem purchaseSystemMask = (districtNotifs.FreeCompany ? PurchaseSystem.FreeCompany : 0) | (districtNotifs.Individual ? PurchaseSystem.Individual : 0);
+            PurchaseSystem purchaseSystemMask = (districtNotifs.FreeCompany ? PurchaseSystem.FreeCompany : 0) |
+                                                (districtNotifs.Individual ? PurchaseSystem.Individual : 0);
             notifEnabled = notifEnabled && (purchaseSystem & purchaseSystemMask) != 0;
             return notifEnabled;
         }
