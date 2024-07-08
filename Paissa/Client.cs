@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoSweep.Structures;
 using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Plugin.Services;
 using DebounceThrottle;
 using Newtonsoft.Json;
 using WebSocketSharp;
@@ -16,8 +15,10 @@ namespace AutoSweep.Paissa {
     public class PaissaClient : IDisposable {
         private readonly HttpClient http;
         private WebSocket ws;
+        private int wsAttempts = 0;
         private bool disposed = false;
         private string sessionToken;
+        internal bool needsHello = true;
 
         // dalamud
         private Plugin plugin;
@@ -55,7 +56,7 @@ namespace AutoSweep.Paissa {
         /// <summary>
         ///     Make a POST request to register the current character's content ID.
         /// </summary>
-        public async Task Hello() {
+        public void Hello() {
             IPlayerCharacter player = Plugin.ClientState.LocalPlayer;
             if (player == null) return;
             var homeworld = player.HomeWorld.GameData;
@@ -68,12 +69,15 @@ namespace AutoSweep.Paissa {
             };
             string content = JsonConvert.SerializeObject(charInfo);
             Plugin.PluginLog.Debug(content);
-            var response = await Post("/hello", content, false);
-            if (response.IsSuccessStatusCode) {
-                string respText = await response.Content.ReadAsStringAsync();
-                sessionToken = JsonConvert.DeserializeObject<HelloResponse>(respText).session_token;
-                Plugin.PluginLog.Info("Completed PaissaDB HELLO");
-            }
+
+            Task.Run(async () => {
+                var response = await Post("/hello", content, false);
+                if (response.IsSuccessStatusCode) {
+                    string respText = await response.Content.ReadAsStringAsync();
+                    sessionToken = JsonConvert.DeserializeObject<HelloResponse>(respText).session_token;
+                    Plugin.PluginLog.Info("Completed PaissaDB HELLO");
+                }
+            });
         }
 
         /// <summary>
@@ -153,8 +157,8 @@ namespace AutoSweep.Paissa {
                 if (auth) {
                     if (sessionToken == null) {
                         Plugin.PluginLog.Warning("Trying to send authed request but no session token!");
-                        await Hello();
-                        continue;
+                        needsHello = true;
+                        return null;
                     }
 
                     request = new HttpRequestMessage(HttpMethod.Post, $"{apiBase}{route}") {
@@ -232,6 +236,7 @@ namespace AutoSweep.Paissa {
 
         private void OnWSOpen(object sender, EventArgs e) {
             Plugin.PluginLog.Information("WebSocket connected");
+            wsAttempts = 0;
         }
 
         private void OnWSMessage(object sender, MessageEventArgs e) {
@@ -271,7 +276,13 @@ namespace AutoSweep.Paissa {
 
         private void WSReconnectSoon() {
             if (ws.IsAlive) return;
+            if (++wsAttempts > 5) {
+                Plugin.PluginLog.Warning($"Could not connect to websocket after {wsAttempts} attempts; giving up");
+                return;
+            }
+
             int t = new Random().Next(5_000, 15_000);
+            t *= wsAttempts;
             Plugin.PluginLog.Warning(
                 $"WebSocket closed unexpectedly: will reconnect to socket in {t / 1000f:F3} seconds");
             Task.Run(async () => await Task.Delay(t)).ContinueWith(_ => {

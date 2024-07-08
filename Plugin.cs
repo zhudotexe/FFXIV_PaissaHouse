@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Threading.Tasks;
 using AutoSweep.Paissa;
 using AutoSweep.Structures;
 using Dalamud.Game.Command;
@@ -37,7 +36,6 @@ namespace AutoSweep {
         private readonly WardObserver wardObserver;
         private readonly LotteryObserver lotteryObserver;
         private readonly PluginUI ui;
-        private bool clientNeedsHello = true;
 
         public Plugin() {
             // setup
@@ -118,13 +116,13 @@ namespace AutoSweep {
         }
 
         private void OnLogin() {
-            clientNeedsHello = true;
+            PaissaClient.needsHello = true;
         }
 
         private void OnUpdateEvent(IFramework f) {
-            if (clientNeedsHello && ClientState?.LocalPlayer != null && PaissaClient != null) {
-                clientNeedsHello = false;
-                Task.Run(async () => await PaissaClient.Hello());
+            if (ClientState?.LocalPlayer != null && PaissaClient != null && PaissaClient.needsHello) {
+                PaissaClient.needsHello = false;
+                PaissaClient.Hello();
             }
         }
 
