@@ -9,7 +9,7 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Lumina.Excel;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 
 namespace AutoSweep {
     public sealed class Plugin : IDalamudPlugin {
@@ -141,7 +141,7 @@ namespace AutoSweep {
             World eventWorld = Worlds.GetRow(e.PlotDetail.world_id);
             OnFoundOpenHouse(e.PlotDetail.world_id, e.PlotDetail.district_id, e.PlotDetail.ward_number,
                 e.PlotDetail.plot_number, e.PlotDetail.price,
-                $"New plot available for purchase on {eventWorld?.Name}: ");
+                $"New plot available for purchase on {eventWorld.Name}: ");
         }
 
         private void OnPlotUpdate(object sender, PlotUpdateEventArgs e) {
@@ -156,7 +156,7 @@ namespace AutoSweep {
             World eventWorld = Worlds.GetRow(e.PlotUpdate.world_id);
             OnFoundOpenHouse(e.PlotUpdate.world_id, e.PlotUpdate.district_id, e.PlotUpdate.ward_number,
                 e.PlotUpdate.plot_number, e.PlotUpdate.price,
-                $"New plot available for purchase on {eventWorld?.Name}: ");
+                $"New plot available for purchase on {eventWorld.Name}: ");
         }
 
 
@@ -165,19 +165,18 @@ namespace AutoSweep {
         /// </summary>
         internal void OnFoundOpenHouse(uint worldId, uint territoryTypeId, int wardNumber, int plotNumber, uint? price,
             string messagePrefix = "") {
-            PlaceName place = Territories.GetRow(territoryTypeId)?.PlaceName.Value;
+            PlaceName place = Territories.GetRow(territoryTypeId).PlaceName.Value;
             // languages like German do not use NameNoArticle (#2)
-            Lumina.Text.SeString districtName =
-                place?.NameNoArticle.RawString.Length > 0 ? place.NameNoArticle : place?.Name;
-            Lumina.Text.SeString worldName = Worlds.GetRow(worldId)?.Name;
+            var districtName =
+                !place.NameNoArticle.IsEmpty ? place.NameNoArticle : place.Name;
+            var worldName = Worlds.GetRow(worldId).Name;
 
             HousingLandSet landSet = HousingLandSets.GetRow(Utils.TerritoryTypeIdToLandSetId(territoryTypeId));
-            byte? houseSize = landSet?.PlotSize[plotNumber];
+            byte? houseSize = landSet.LandSet[plotNumber].PlotSize;
             uint realPrice =
-                price.GetValueOrDefault(landSet?.InitialPrice[plotNumber] ??
-                                        0); // if price is null, it's probably the default price (landupdate)
+                price.GetValueOrDefault(landSet.LandSet[plotNumber].InitialPrice); // if price is null, it's probably the default price (landupdate)
 
-            string districtNameNoSpaces = districtName?.ToString().Replace(" ", "");
+            string districtNameNoSpaces = districtName.ToString().Replace(" ", "");
             int wardNum = wardNumber + 1;
             int plotNum = plotNumber + 1;
             float housePriceMillions = realPrice / 1000000f;
@@ -195,8 +194,8 @@ namespace AutoSweep {
                     break;
                 case OutputFormat.Custom:
                     var template = $"{messagePrefix}{Configuration.OutputFormatString}";
-                    output = Utils.FormatCustomOutputString(template, districtName?.ToString(), districtNameNoSpaces,
-                        worldName, wardNum.ToString(),
+                    output = Utils.FormatCustomOutputString(template, districtName.ToString(), districtNameNoSpaces,
+                        worldName.ToString(), wardNum.ToString(),
                         plotNum.ToString(), realPrice.ToString(), housePriceMillions.ToString("F3"), houseSizeName);
                     break;
                 default:

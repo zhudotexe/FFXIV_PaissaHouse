@@ -1,4 +1,5 @@
-using Lumina.Excel.GeneratedSheets;
+
+using Lumina.Excel.Sheets;
 
 namespace AutoSweep.Paissa {
     public class Utils {
@@ -44,9 +45,9 @@ namespace AutoSweep.Paissa {
             // does the config want notifs for this world?
             World eventWorld = plugin.Worlds.GetRow(worldId);
             if (!(plugin.Configuration.AllNotifs
-                  || plugin.Configuration.HomeworldNotifs && worldId == Plugin.ClientState.LocalPlayer?.HomeWorld.Id
-                  || plugin.Configuration.DatacenterNotifs && eventWorld?.DataCenter.Row ==
-                  Plugin.ClientState.LocalPlayer?.HomeWorld.GameData?.DataCenter.Row))
+                  || plugin.Configuration.HomeworldNotifs && worldId == Plugin.ClientState.LocalPlayer?.HomeWorld.RowId
+                  || plugin.Configuration.DatacenterNotifs && eventWorld.DataCenter.RowId ==
+                  Plugin.ClientState.LocalPlayer?.HomeWorld.Value.DataCenter.RowId))
                 return false;
             // get the district config
             DistrictNotifConfig districtNotifs;

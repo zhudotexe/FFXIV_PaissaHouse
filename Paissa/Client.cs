@@ -59,13 +59,12 @@ namespace AutoSweep.Paissa {
         public void Hello() {
             IPlayerCharacter player = Plugin.ClientState.LocalPlayer;
             if (player == null) return;
-            var homeworld = player.HomeWorld.GameData;
-            if (homeworld == null) return;
+            var homeworld = player.HomeWorld.Value;
             var charInfo = new Dictionary<string, object> {
                 { "cid", Plugin.ClientState.LocalContentId },
                 { "name", player.Name.ToString() },
                 { "world", homeworld.Name.ToString() },
-                { "worldId", player.HomeWorld.Id }
+                { "worldId", homeworld.RowId }
             };
             string content = JsonConvert.SerializeObject(charInfo);
             Plugin.PluginLog.Debug(content);

@@ -2,7 +2,7 @@ using System;
 using AutoSweep.Structures;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using Lumina.Text;
 
 namespace AutoSweep.Paissa {
@@ -60,14 +60,14 @@ namespace AutoSweep.Paissa {
                 $"housingType={housingType}, territoryTypeId={territoryTypeId}, wardId={wardId}, plotId={plotId}, apartmentNumber={apartmentNumber}, placardSaleInfoPtr={placardSaleInfoPtr}, a8={a8}");
 
             // get information about the world from the clientstate
-            World world = Plugin.ClientState.LocalPlayer?.CurrentWorld.GameData;
+            World? world = Plugin.ClientState.LocalPlayer?.CurrentWorld.ValueNullable;
             if (world is null) return;
 
-            SeString place = plugin.Territories.GetRow(territoryTypeId)?.PlaceName.Value?.Name;
-            SeString worldName = world.Name;
+            var place = plugin.Territories.GetRow(territoryTypeId).PlaceName.Value.Name;
+            var worldName = world.Value.Name;
             Plugin.PluginLog.Info($"Plot {place} {wardId + 1}-{plotId + 1} ({worldName}) has {saleInfo.EntryCount} lottery entries.");
 
-            plugin.PaissaClient.PostLotteryInfo(world.RowId, territoryTypeId, wardId, plotId, saleInfo);
+            plugin.PaissaClient.PostLotteryInfo(world.Value.RowId, territoryTypeId, wardId, plotId, saleInfo);
         }
     }
 
