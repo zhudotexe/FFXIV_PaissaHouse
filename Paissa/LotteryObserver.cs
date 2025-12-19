@@ -71,7 +71,7 @@ namespace AutoSweep.Paissa {
                 $"housingType={housingType}, territoryTypeId={territoryTypeId}, wardId={wardId}, plotId={plotId}, apartmentNumber={apartmentNumber}, placardSaleInfoPtr={placardSaleInfoPtr}, a8={a8}");
 
             // get information about the world from the clientstate
-            World? world = Plugin.ClientState.LocalPlayer?.CurrentWorld.ValueNullable;
+            World? world = Plugin.PlayerState.CurrentWorld.ValueNullable;
             if (world is null) return;
 
             var place = plugin.Territories.GetRow(territoryTypeId).PlaceName.Value.Name;

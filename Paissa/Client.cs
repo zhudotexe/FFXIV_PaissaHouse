@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoSweep.Structures;
 using Dalamud.Game.ClientState.Objects.SubKinds;
+using Dalamud.Plugin.Services;
 using DebounceThrottle;
 using Newtonsoft.Json;
 using WebSocketSharp;
@@ -57,12 +58,11 @@ namespace AutoSweep.Paissa {
         ///     Make a POST request to register the current character's content ID.
         /// </summary>
         public void Hello() {
-            IPlayerCharacter player = Plugin.ClientState.LocalPlayer;
-            if (player == null) return;
+            IPlayerState player = Plugin.PlayerState;
             var homeworld = player.HomeWorld.Value;
             var charInfo = new Dictionary<string, object> {
-                { "cid", Plugin.ClientState.LocalContentId },
-                { "name", player.Name.ToString() },
+                { "cid", Plugin.PlayerState.ContentId },
+                { "name", player.CharacterName },
                 { "world", homeworld.Name.ToString() },
                 { "worldId", homeworld.RowId }
             };

@@ -45,9 +45,9 @@ namespace AutoSweep.Paissa {
             // does the config want notifs for this world?
             World eventWorld = plugin.Worlds.GetRow(worldId);
             if (!(plugin.Configuration.AllNotifs
-                  || plugin.Configuration.HomeworldNotifs && worldId == Plugin.ClientState.LocalPlayer?.HomeWorld.RowId
+                  || plugin.Configuration.HomeworldNotifs && worldId == Plugin.PlayerState.HomeWorld.RowId
                   || plugin.Configuration.DatacenterNotifs && eventWorld.DataCenter.RowId ==
-                  Plugin.ClientState.LocalPlayer?.HomeWorld.Value.DataCenter.RowId))
+                  Plugin.PlayerState.HomeWorld.Value.DataCenter.RowId))
                 return false;
             // get the district config
             DistrictNotifConfig districtNotifs;

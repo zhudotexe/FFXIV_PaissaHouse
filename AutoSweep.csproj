@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Dalamud.NET.Sdk/13.0.0">
+<Project Sdk="Dalamud.NET.Sdk/14.0.1">
 
     <PropertyGroup>
         <Title>autoSweep</Title>
@@ -7,7 +7,7 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <OutputPath>bin\$(Configuration)\</OutputPath>
         <AssemblyName>autoSweep</AssemblyName>
-        <AssemblyVersion>1.4.8.0</AssemblyVersion>
+        <AssemblyVersion>1.4.9.0</AssemblyVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

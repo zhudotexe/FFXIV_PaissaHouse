@@ -24,6 +24,7 @@ namespace AutoSweep {
         [PluginService] internal static IPluginLog PluginLog { get; private set; } = null!;
         [PluginService] internal static IGameInteropProvider InteropProvider { get; private set; } = null!;
         [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
+        [PluginService] internal static IPlayerState PlayerState { get; private set; } = null!;
         internal readonly Configuration Configuration;
         internal readonly PaissaClient PaissaClient;
 
@@ -120,7 +121,7 @@ namespace AutoSweep {
         }
 
         private void OnUpdateEvent(IFramework f) {
-            if (ClientState?.LocalPlayer != null && PaissaClient != null && PaissaClient.needsHello) {
+            if (PlayerState.IsLoaded && PaissaClient != null && PaissaClient.needsHello) {
                 PaissaClient.needsHello = false;
                 PaissaClient.Hello();
             }
