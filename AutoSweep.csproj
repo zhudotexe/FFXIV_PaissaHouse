@@ -7,7 +7,7 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <OutputPath>bin\$(Configuration)\</OutputPath>
         <AssemblyName>autoSweep</AssemblyName>
-        <AssemblyVersion>1.4.9.0</AssemblyVersion>
+        <AssemblyVersion>1.4.10.0</AssemblyVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
